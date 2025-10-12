@@ -1,0 +1,115 @@
+"""Plotting utilities."""
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import numpy as np
+from cgfoil.utils.geometry import point_in_polygon
+
+
+def plot_triangulation(
+    cdt,
+    outer_points,
+    inner_list,
+    line_ply_list,
+    untrimmed_lines,
+    ply_ids,
+    airfoil_ids,
+    web_names,
+):
+    """Plot the triangulation with filled triangles colored by material id and colorbar."""
+
+    def rescale_plot(ax, scale=1.1):
+        xmin, xmax = ax.get_xlim()
+        ymin, ymax = ax.get_ylim()
+        xmid = (xmin + xmax) / 2.0
+        ymid = (ymin + ymax) / 2.0
+        xran = xmax - xmid
+        yran = ymax - ymid
+        ax.set_xlim(xmid - xran * scale, xmid + xran * scale)
+        ax.set_ylim(ymid - yran * scale, ymid + yran * scale)
+
+    cmap = plt.cm.viridis
+    all_ids = ply_ids + airfoil_ids
+    max_id = max(all_ids) if all_ids else 0
+
+    for face in cdt.finite_faces():
+        p0 = face.vertex(0).point()
+        p1 = face.vertex(1).point()
+        p2 = face.vertex(2).point()
+        cx = (p0.x() + p1.x() + p2.x()) / 3.0
+        cy = (p0.y() + p1.y() + p2.y()) / 3.0
+        centroid = p0.__class__(cx, cy)  # Assuming Point_2
+        in_hole = point_in_polygon(centroid, inner_list[-1])
+        material_id = -1  # default
+        # Check airfoil regions first for preference
+        if not in_hole:
+            for i in range(len(inner_list) + 1):
+                if i == 0:
+                    if not point_in_polygon(centroid, inner_list[0]):
+                        material_id = airfoil_ids[i]
+                        break
+                elif i < len(inner_list):
+                    if point_in_polygon(
+                        centroid, inner_list[i - 1]
+                    ) and not point_in_polygon(centroid, inner_list[i]):
+                        material_id = airfoil_ids[i]
+                        break
+                else:
+                    if point_in_polygon(centroid, inner_list[-1]):
+                        material_id = airfoil_ids[i]
+                        break
+        # Then check ply if not assigned
+        if material_id == -1:
+            for idx, ply in enumerate(line_ply_list):
+                if point_in_polygon(centroid, ply):
+                    material_id = ply_ids[idx]
+                    break
+        if material_id != -1:
+            xs = [p0.x(), p1.x(), p2.x()]
+            ys = [p0.y(), p1.y(), p2.y()]
+            color = cmap(material_id / max_id)
+            plt.fill(xs, ys, color=color, alpha=0.5)
+
+    # Plot the input lines without trim using alpha=0.1
+    for untrimmed in untrimmed_lines:
+        xs = [p.x() for p in untrimmed]
+        ys = [p.y() for p in untrimmed]
+        plt.plot(xs, ys, "k-", alpha=0.1)
+
+    # Annotate web names at the upper end
+    for idx, line in enumerate(untrimmed_lines):
+        max_y_point = max(line, key=lambda p: p.y())
+        plt.text(
+            max_y_point.x(),
+            max_y_point.y(),
+            web_names[idx],
+            fontsize=12,
+            ha="center",
+            va="bottom",
+        )
+
+    # Plot the boundaries
+    xs = [p.x() for p in outer_points] + [outer_points[0].x()]
+    ys = [p.y() for p in outer_points] + [outer_points[0].y()]
+    plt.plot(xs, ys, "r-", linewidth=2)
+
+    colors = ["g-", "c-", "m-", "y-"]
+    for idx, inner_points in enumerate(inner_list):
+        xs = [p.x() for p in inner_points] + [inner_points[0].x()]
+        ys = [p.y() for p in inner_points] + [inner_points[0].y()]
+        plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
+
+    for idx, ply_points in enumerate(line_ply_list):
+        xs = [p.x() for p in ply_points] + [ply_points[0].x()]
+        ys = [p.y() for p in ply_points] + [ply_points[0].y()]
+        color = cmap(ply_ids[idx] / max_id)
+        plt.plot(xs, ys, color=color, linewidth=2)
+
+    # Add colorbar
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_id))
+    sm.set_array([])
+    plt.colorbar(sm, ax=plt.gca(), label="Material ID")
+
+    rescale_plot(plt.gca())
+    plt.axis("equal")
+    plt.show()
