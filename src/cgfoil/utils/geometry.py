@@ -1,5 +1,6 @@
 """Geometric utilities."""
 
+
 def point_in_polygon(point, polygon):
     """Check if point is inside polygon using ray casting."""
     x, y = point.x(), point.y()
