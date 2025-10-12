@@ -1,5 +1,7 @@
 """Main execution logic for cgfoil."""
 
+import math
+import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
@@ -15,16 +17,14 @@ from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.plot import plot_triangulation
 
 
-def run_cgfoil(
-    skins, web_definition, airfoil_filename="naca0018.dat", plot=False, vtk=None
-):
+def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=False, vtk=None):
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename)
 
     # Ply thicknesses for airfoil
     x = [p.x() for p in outer_points]
     sorted_skins = sorted(skins.values(), key=lambda d: d["sort_index"])
-    ply_thicknesses = [s["thickness"] for s in sorted_skins]
+    ply_thicknesses = [s["thickness"](x) for s in sorted_skins]
     inner_list = []
     current = outer_points
     for thickness in ply_thicknesses:
@@ -74,11 +74,7 @@ def run_cgfoil(
             current_untrimmed = untrimmed_offset_line
 
     # Airfoil material ids
-    airfoil_ids = []
-    material_id = max(ply_ids) + 1 if ply_ids else 0
-    for i in range(len(inner_list) + 1):
-        airfoil_ids.append(material_id)
-        material_id += 1
+    airfoil_ids = [0] + [s["material"] for s in sorted_skins]
 
     # Create constrained Delaunay triangulation
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
