@@ -1,8 +1,6 @@
 """Plotting utilities."""
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import numpy as np
 from cgfoil.utils.geometry import point_in_polygon
 
 
