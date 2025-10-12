@@ -1,0 +1,1 @@
+"""CGAL-based airfoil meshing package."""
