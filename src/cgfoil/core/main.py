@@ -1,6 +1,5 @@
 """Main execution logic for cgfoil."""
 
-import math
 import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
