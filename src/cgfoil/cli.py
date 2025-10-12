@@ -13,4 +13,80 @@ def main():
     )
     parser.add_argument("-v", "--vtk", type=str, help="Output VTK file")
     args = parser.parse_args()
-    run_cgfoil(plot=args.plot, vtk=args.vtk)
+
+    # Default skins
+    skins = {
+        "outer_skin": {
+            "thickness": np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
+            "material": 12,
+            "sort_index": 1,
+        },
+        "cap": {
+            "thickness": np.interp(x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]),
+            "material": 13,
+            "sort_index": 2,
+        },
+        "core": {
+            "thickness": np.interp(
+                x,
+                [0.05, 0.1, 0.2, 0.20001, 0.5, 0.5001, 0.7, 0.9],
+                [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0],
+            ),
+            "material": 14,
+            "sort_index": 3,
+        },
+        "inner_skin": {
+            "thickness": np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
+            "material": 15,
+            "sort_index": 4,
+        },
+    }
+
+    # Default web definition
+    web_definition = {
+        "web1": {
+            "points": ((0.25, -0.1), (0.25, 0.1)),
+            "plies": [
+                {"thickness": 0.004, "material": 3},
+                {
+                    "thickness": lambda y: np.interp(
+                        y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
+                    ),
+                    "material": 4,
+                },
+                {"thickness": 0.004, "material": 3},
+            ],
+            "normal_ref": [1, 0],
+            "n_cell": 20,
+        },
+        "web2": {
+            "points": ((0.4, -0.1), (0.4, 0.1)),
+            "plies": [
+                {"thickness": 0.01, "material": 5},
+                {
+                    "thickness": lambda y: np.interp(
+                        y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
+                    ),
+                    "material": 6,
+                },
+                {"thickness": 0.01, "material": 7},
+            ],
+            "normal_ref": [-1, 0],
+            "n_cell": 15,
+        },
+        "web3": {
+            "points": ((0.7, -0.1), (0.7, 0.1)),
+            "plies": [
+                {"thickness": 0.005, "material": 5},
+                {
+                    "thickness": 0.005,
+                    "material": 6,
+                },
+                {"thickness": 0.005, "material": 7},
+            ],
+            "normal_ref": [-1, 0],
+            "n_cell": 15,
+        },
+    }
+
+    run_cgfoil(skins, web_definition, plot=args.plot, vtk=args.vtk)
