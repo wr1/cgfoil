@@ -30,9 +30,7 @@ dependencies = [
     "pyvista",
     "CGAL",
 ]
-scripts = {
-    "cgfoil" = "cgfoil.cli:main"
-}
+scripts = { "cgfoil" = "cgfoil.cli:main" }
 
 [project.urls]
 Homepage = "https://github.com/yourusername/cgfoil"
@@ -48,3 +46,4 @@ ignore = []
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]
