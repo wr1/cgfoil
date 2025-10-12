@@ -1,6 +1,5 @@
 """Main execution logic for cgfoil."""
 
-import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
@@ -16,38 +15,14 @@ from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.plot import plot_triangulation
 
 
-def run_cgfoil(plot=False, vtk=None):
+def run_cgfoil(
+    skins, web_definition, airfoil_filename="naca0018.dat", plot=False, vtk=None
+):
     # Load airfoil points (outer)
-    outer_points = load_airfoil("naca0018.dat")
+    outer_points = load_airfoil(airfoil_filename)
 
     # Ply thicknesses for airfoil
     x = [p.x() for p in outer_points]
-    skins = {
-        "outer_skin": {
-            "thickness": np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
-            "material": 12,
-            "sort_index": 1,
-        },
-        "cap": {
-            "thickness": np.interp(x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]),
-            "material": 13,
-            "sort_index": 2,
-        },
-        "core": {
-            "thickness": np.interp(
-                x,
-                [0.05, 0.1, 0.2, 0.20001, 0.5, 0.5001, 0.7, 0.9],
-                [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0],
-            ),
-            "material": 14,
-            "sort_index": 3,
-        },
-        "inner_skin": {
-            "thickness": np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
-            "material": 15,
-            "sort_index": 4,
-        },
-    }
     sorted_skins = sorted(skins.values(), key=lambda d: d["sort_index"])
     ply_thicknesses = [s["thickness"] for s in sorted_skins]
     inner_list = []
@@ -65,53 +40,6 @@ def run_cgfoil(plot=False, vtk=None):
         protrusion_distance = 0.5 * max(last_ply)
     if protrusion_distance == 0:
         protrusion_distance = 1e-3
-
-    # Proposed web definition
-    web_definition = {
-        "web1": {
-            "points": ((0.25, -0.1), (0.25, 0.1)),
-            "plies": [
-                {"thickness": 0.004, "material": 3},
-                {
-                    "thickness": lambda y: np.interp(
-                        y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
-                    ),
-                    "material": 4,
-                },
-                {"thickness": 0.004, "material": 3},
-            ],
-            "normal_ref": [1, 0],
-            "n_cell": 20,
-        },
-        "web2": {
-            "points": ((0.4, -0.1), (0.4, 0.1)),
-            "plies": [
-                {"thickness": 0.01, "material": 5},
-                {
-                    "thickness": lambda y: np.interp(
-                        y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
-                    ),
-                    "material": 6,
-                },
-                {"thickness": 0.01, "material": 7},
-            ],
-            "normal_ref": [-1, 0],
-            "n_cell": 15,
-        },
-        "web3": {
-            "points": ((0.7, -0.1), (0.7, 0.1)),
-            "plies": [
-                {"thickness": 0.005, "material": 5},
-                {
-                    "thickness": 0.005,
-                    "material": 6,
-                },
-                {"thickness": 0.005, "material": 7},
-            ],
-            "normal_ref": [-1, 0],
-            "n_cell": 15,
-        },
-    }
 
     # Create line plies for each web
     line_ply_list = []
