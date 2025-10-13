@@ -150,6 +150,9 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
                         if i == 0:
                             if not point_in_polygon(centroid, inner_list[0]):
                                 material_id = airfoil_ids[i]
+                                # Find closest outer point by 2D distance
+                                closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
+                                normal_x, normal_y = outer_normals[closest_i]
                                 break
                         elif i < len(inner_list):
                             if point_in_polygon(

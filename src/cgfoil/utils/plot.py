@@ -54,6 +54,9 @@ def plot_triangulation(
                 if i == 0:
                     if not point_in_polygon(centroid, inner_list[0]):
                         material_id = airfoil_ids[i]
+                        # Find closest outer point by 2D distance
+                        closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
+                        normal_x, normal_y = outer_normals[closest_i]
                         break
                 elif i < len(inner_list):
                     if point_in_polygon(
@@ -73,11 +76,11 @@ def plot_triangulation(
                         break
         # Then check ply if not assigned
         if material_id == -1:
-            for idx, ply in enumerate(line_ply_list):
+            for idx_ply, ply in enumerate(line_ply_list):
                 if point_in_polygon(centroid, ply):
-                    material_id = ply_ids[idx]
+                    material_id = ply_ids[idx_ply]
                     if ply_normals:
-                        normal_x, normal_y = ply_normals[idx]
+                        normal_x, normal_y = ply_normals[idx_ply]
                     break
         if material_id != -1:
             xs = [p0.x(), p1.x(), p2.x()]
