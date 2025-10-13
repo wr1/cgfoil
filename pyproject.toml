@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "cgfoil"
 version = "0.1.0"
 description = "CGAL-based airfoil meshing tool"
-authors = [{name = "Your Name", email = "your.email@example.com"}]
+authors = [{name = "wr1", email = "8971152+wr1@users.noreply.github.com"}]
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
@@ -33,9 +33,8 @@ dependencies = [
 scripts = { "cgfoil" = "cgfoil.cli:main" }
 
 [project.urls]
-Homepage = "https://github.com/yourusername/cgfoil"
-Repository = "https://github.com/yourusername/cgfoil"
-Issues = "https://github.com/yourusername/cgfoil/issues"
+Homepage = "https://github.com/wr1/cgfoil"
+Repository = "https://github.com/wr1/cgfoil"
 
 [tool.ruff]
 line-length = 88
