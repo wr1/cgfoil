@@ -10,12 +10,6 @@ Install with uv:
 uv pip install .
 ```
 
-Or with pip:
-
-```bash
-pip install .
-```
-
 ## Usage
 
 Run the CLI:
@@ -27,6 +21,7 @@ cgfoil --plot --vtk output.vtk
 Options:
 - `-p, --plot`: Plot the triangulation
 - `-v, --vtk FILE`: Output VTK file
+- `-f, --file FILE`: Path to airfoil data file (.dat), default: naca0018.dat
 
 ## Development
 

@@ -12,9 +12,11 @@ def compute_face_normals(
     airfoil_ids,
     outer_normals,
     ply_normals,
+    outer_tangents,
 ):
-    """Compute normals and material IDs for each finite face in the triangulation."""
+    """Compute normals, inplane vectors, and material IDs for each finite face in the triangulation."""
     face_normals = []
+    face_inplanes = []
     face_material_ids = []
     n = len(outer_points)
     for face in cdt.finite_faces():
@@ -27,6 +29,7 @@ def compute_face_normals(
         in_hole = point_in_polygon(centroid, inner_list[-1])
         material_id = -1
         normal_x, normal_y = 0, 0
+        inplane_x, inplane_y = 0, 0
         if not in_hole:
             for i in range(len(inner_list) + 1):
                 if i == 0:
@@ -38,6 +41,7 @@ def compute_face_normals(
                             key=lambda j: (outer_points[j].x() - cx) ** 2 + (outer_points[j].y() - cy) ** 2,
                         )
                         normal_x, normal_y = outer_normals[closest_i]
+                        inplane_x, inplane_y = outer_tangents[closest_i]
                         break
                 elif i < len(inner_list):
                     if (
@@ -51,6 +55,7 @@ def compute_face_normals(
                             key=lambda j: (outer_points[j].x() - cx) ** 2 + (outer_points[j].y() - cy) ** 2,
                         )
                         normal_x, normal_y = outer_normals[closest_i]
+                        inplane_x, inplane_y = outer_tangents[closest_i]
                         break
                 else:
                     if point_in_polygon(centroid, inner_list[-1]):
@@ -61,13 +66,16 @@ def compute_face_normals(
                             key=lambda j: (outer_points[j].x() - cx) ** 2 + (outer_points[j].y() - cy) ** 2,
                         )
                         normal_x, normal_y = outer_normals[closest_i]
+                        inplane_x, inplane_y = outer_tangents[closest_i]
                         break
         if material_id == -1:
             for idx_ply, ply in enumerate(line_ply_list):
                 if point_in_polygon(centroid, ply):
                     material_id = ply_ids[idx_ply]
                     normal_x, normal_y = ply_normals[idx_ply]
+                    inplane_x, inplane_y = ply_normals[idx_ply][1], -ply_normals[idx_ply][0]
                     break
         face_normals.append((normal_x, normal_y))
+        face_inplanes.append((inplane_x, inplane_y))
         face_material_ids.append(material_id)
-    return face_normals, face_material_ids
+    return face_normals, face_material_ids, face_inplanes

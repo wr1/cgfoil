@@ -2,9 +2,9 @@
 
 import math
 import numpy as np
+from typing import Dict, Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
@@ -13,18 +13,26 @@ from cgfoil.core.trim import (
     trim_line,
     trim_self_intersecting_curve,
 )
+from cgfoil.models import Skin, Web
 from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.plot import plot_triangulation
 
 
-def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=False, vtk=None):
+def run_cgfoil(
+    skins: Dict[str, Skin],
+    web_definition: Dict[str, Web],
+    airfoil_filename: str = "naca0018.dat",
+    plot: bool = False,
+    vtk: Optional[str] = None,
+):
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename)
 
     # Compute normals for outer points (outward)
     n = len(outer_points)
     outer_normals = []
+    outer_tangents = []
     for i in range(n):
         prev = outer_points[(i - 1) % n]
         curr = outer_points[i]
@@ -38,11 +46,12 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
         nx = -ty
         ny = tx
         outer_normals.append((nx, ny))
+        outer_tangents.append((tx, ty))
 
     # Ply thicknesses for airfoil
     x = [p.x() for p in outer_points]
-    sorted_skins = sorted(skins.values(), key=lambda d: d["sort_index"])
-    ply_thicknesses = [s["thickness"](x) for s in sorted_skins]
+    sorted_skins = sorted(skins.values(), key=lambda s: s.sort_index)
+    ply_thicknesses = [s.thickness(x) for s in sorted_skins]
     inner_list = []
     current = outer_points
     for thickness in ply_thicknesses:
@@ -66,21 +75,21 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
     untrimmed_lines = []
     web_names = list(web_definition.keys())
     for web_name, web in web_definition.items():
-        p1_coords, p2_coords = web["points"]
+        p1_coords, p2_coords = web.points
         p1 = Point_2(*p1_coords)
         p2 = Point_2(*p2_coords)
-        untrimmed_base_line = create_line_mesh(p1, p2, web["n_cell"])
+        untrimmed_base_line = create_line_mesh(p1, p2, web.n_cell)
         untrimmed_lines.append(untrimmed_base_line)
         base_line = trim_line(untrimmed_base_line, inner_list[-1])
         base_line = adjust_endpoints(base_line, protrusion_distance)
         current_line = base_line
         current_untrimmed = untrimmed_base_line
-        normal_ref = web.get("normal_ref")
-        for ply in web["plies"]:
-            if callable(ply["thickness"]):
-                thickness_list = [ply["thickness"](p.y()) for p in untrimmed_base_line]
+        normal_ref = web.normal_ref
+        for ply in web.plies:
+            if callable(ply.thickness):
+                thickness_list = [ply.thickness(p.y()) for p in untrimmed_base_line]
             else:
-                thickness_list = [ply["thickness"]] * len(untrimmed_base_line)
+                thickness_list = [ply.thickness] * len(untrimmed_base_line)
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
@@ -88,13 +97,13 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
-            ply_ids.append(ply["material"])
+            ply_ids.append(ply.material)
             ply_normals.append(normal_ref if normal_ref else [0, 0])
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
     # Airfoil material ids
-    airfoil_ids = [0] + [s["material"] for s in sorted_skins]
+    airfoil_ids = [0] + [s.material for s in sorted_skins]
 
     # Create constrained Delaunay triangulation
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
@@ -118,7 +127,7 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
             cdt.insert_constraint(ply_points[i], ply_points[(i + 1) % len(ply_points)])
 
     # Compute face normals and material IDs
-    face_normals, face_material_ids = compute_face_normals(
+    face_normals, face_material_ids, face_inplanes = compute_face_normals(
         cdt,
         outer_points,
         inner_list,
@@ -127,6 +136,7 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
         airfoil_ids,
         outer_normals,
         ply_normals,
+        outer_tangents,
     )
 
     if vtk:
@@ -147,6 +157,7 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
             faces = []
             cell_materials = []
             normals_list = []
+            inplanes_list = []
             idx = 0
             for face in cdt.finite_faces():
                 material_id = face_material_ids[idx]
@@ -157,12 +168,14 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
                     faces.append([3, v0, v1, v2])
                     cell_materials.append(material_id)
                     normals_list.append(face_normals[idx])
+                    inplanes_list.append(face_inplanes[idx])
                 idx += 1
             mesh = pv.UnstructuredGrid(
                 faces, [pv.CellType.TRIANGLE] * len(faces), vertices
             )
             mesh.cell_data["material_id"] = cell_materials
             mesh.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in normals_list])
+            mesh.cell_data["inplane"] = np.array([[i[0], i[1], 0.0] for i in inplanes_list])
             mesh.save(vtk)
             print(f"Mesh saved to {vtk}")
 
@@ -178,6 +191,7 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
             web_names,
             face_normals,
             face_material_ids,
+            face_inplanes,
         )
 
     print(f"Number of vertices: {cdt.number_of_vertices()}")

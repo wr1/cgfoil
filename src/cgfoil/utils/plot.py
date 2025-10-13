@@ -18,6 +18,7 @@ def plot_triangulation(
     web_names,
     face_normals,
     face_material_ids,
+    face_inplanes,
 ):
     """Plot the triangulation with filled triangles colored by material id and colorbar."""
 
@@ -37,6 +38,7 @@ def plot_triangulation(
 
     centroids = []
     normals = []
+    inplanes = []
     idx = 0
     for face in cdt.finite_faces():
         material_id = face_material_ids[idx]
@@ -52,6 +54,7 @@ def plot_triangulation(
             plt.fill(xs, ys, color=color, alpha=0.5)
             centroids.append((cx, cy))
             normals.append(face_normals[idx])
+            inplanes.append(face_inplanes[idx])
         idx += 1
 
     # Plot the input lines without trim using alpha=0.1
@@ -100,6 +103,15 @@ def plot_triangulation(
         nx_list, ny_list = zip(*normals)
         plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=30, color='blue', alpha=0.4)
 
+    # Add quiver plot for inplanes
+    if centroids and inplanes:
+        ix_list, iy_list = zip(*inplanes)
+        plt.quiver(cx_list, cy_list, ix_list, iy_list, scale=30, color='red', alpha=0.4)
+
     rescale_plot(plt.gca())
     plt.axis("equal")
+    # Set to fullscreen
+    fig = plt.gcf()
+    if hasattr(fig.canvas.manager, 'full_screen_toggle'):
+        fig.canvas.manager.full_screen_toggle()
     plt.show()
