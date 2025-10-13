@@ -6,6 +6,7 @@ from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
 from cgfoil.core.mesh import create_line_mesh
+from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
 from cgfoil.core.trim import (
     adjust_endpoints,
@@ -116,6 +117,18 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
         for i in range(len(ply_points)):
             cdt.insert_constraint(ply_points[i], ply_points[(i + 1) % len(ply_points)])
 
+    # Compute face normals and material IDs
+    face_normals, face_material_ids = compute_face_normals(
+        cdt,
+        outer_points,
+        inner_list,
+        line_ply_list,
+        ply_ids,
+        airfoil_ids,
+        outer_normals,
+        ply_normals,
+    )
+
     if vtk:
         try:
             import pyvista as pv
@@ -130,66 +143,26 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
                 vertex_map[v] = idx
                 vertices.append([v.point().x(), v.point().y(), 0.0])
                 idx += 1
-            # Collect faces and materials
+            # Collect faces, materials, and normals
             faces = []
             cell_materials = []
-            cell_normals_x = []
-            cell_normals_y = []
+            normals_list = []
+            idx = 0
             for face in cdt.finite_faces():
-                p0 = face.vertex(0).point()
-                p1 = face.vertex(1).point()
-                p2 = face.vertex(2).point()
-                cx = (p0.x() + p1.x() + p2.x()) / 3.0
-                cy = (p0.y() + p1.y() + p2.y()) / 3.0
-                centroid = Point_2(cx, cy)
-                in_hole = point_in_polygon(centroid, inner_list[-1])
-                material_id = -1
-                normal_x, normal_y = 0, 0
-                if not in_hole:
-                    for i in range(len(inner_list) + 1):
-                        if i == 0:
-                            if not point_in_polygon(centroid, inner_list[0]):
-                                material_id = airfoil_ids[i]
-                                # Find closest outer point by 2D distance
-                                closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                                normal_x, normal_y = outer_normals[closest_i]
-                                break
-                        elif i < len(inner_list):
-                            if point_in_polygon(
-                                centroid, inner_list[i - 1]
-                            ) and not point_in_polygon(centroid, inner_list[i]):
-                                material_id = airfoil_ids[i]
-                                # Find closest outer point by 2D distance
-                                closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                                normal_x, normal_y = outer_normals[closest_i]
-                                break
-                        else:
-                            if point_in_polygon(centroid, inner_list[-1]):
-                                material_id = airfoil_ids[i]
-                                # Find closest outer point by 2D distance
-                                closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                                normal_x, normal_y = outer_normals[closest_i]
-                                break
-                if material_id == -1:
-                    for idx_ply, ply in enumerate(line_ply_list):
-                        if point_in_polygon(centroid, ply):
-                            material_id = ply_ids[idx_ply]
-                            normal_x, normal_y = ply_normals[idx_ply]
-                            break
+                material_id = face_material_ids[idx]
                 if material_id != -1:
                     v0 = vertex_map[face.vertex(0)]
                     v1 = vertex_map[face.vertex(1)]
                     v2 = vertex_map[face.vertex(2)]
                     faces.append([3, v0, v1, v2])
                     cell_materials.append(material_id)
-                    cell_normals_x.append(normal_x)
-                    cell_normals_y.append(normal_y)
+                    normals_list.append(face_normals[idx])
+                idx += 1
             mesh = pv.UnstructuredGrid(
                 faces, [pv.CellType.TRIANGLE] * len(faces), vertices
             )
             mesh.cell_data["material_id"] = cell_materials
-            mesh.cell_data["normal_x"] = cell_normals_x
-            mesh.cell_data["normal_y"] = cell_normals_y
+            mesh.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in normals_list])
             mesh.save(vtk)
             print(f"Mesh saved to {vtk}")
 
@@ -203,8 +176,8 @@ def run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=Fals
             ply_ids,
             airfoil_ids,
             web_names,
-            ply_normals,
-            outer_normals,
+            face_normals,
+            face_material_ids,
         )
 
     print(f"Number of vertices: {cdt.number_of_vertices()}")

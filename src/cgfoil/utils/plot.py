@@ -16,8 +16,8 @@ def plot_triangulation(
     ply_ids,
     airfoil_ids,
     web_names,
-    ply_normals=None,
-    outer_normals=None,
+    face_normals,
+    face_material_ids,
 ):
     """Plot the triangulation with filled triangles colored by material id and colorbar."""
 
@@ -37,58 +37,22 @@ def plot_triangulation(
 
     centroids = []
     normals = []
-    n = len(outer_points)
+    idx = 0
     for face in cdt.finite_faces():
-        p0 = face.vertex(0).point()
-        p1 = face.vertex(1).point()
-        p2 = face.vertex(2).point()
-        cx = (p0.x() + p1.x() + p2.x()) / 3.0
-        cy = (p0.y() + p1.y() + p2.y()) / 3.0
-        centroid = Point_2(cx, cy)
-        in_hole = point_in_polygon(centroid, inner_list[-1])
-        material_id = -1
-        normal_x, normal_y = 0, 0
-        # Check airfoil regions first for preference
-        if not in_hole:
-            for i in range(len(inner_list) + 1):
-                if i == 0:
-                    if not point_in_polygon(centroid, inner_list[0]):
-                        material_id = airfoil_ids[i]
-                        # Find closest outer point by 2D distance
-                        closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                        normal_x, normal_y = outer_normals[closest_i]
-                        break
-                elif i < len(inner_list):
-                    if point_in_polygon(
-                        centroid, inner_list[i - 1]
-                    ) and not point_in_polygon(centroid, inner_list[i]):
-                        material_id = airfoil_ids[i]
-                        # Find closest outer point by 2D distance
-                        closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                        normal_x, normal_y = outer_normals[closest_i]
-                        break
-                else:
-                    if point_in_polygon(centroid, inner_list[-1]):
-                        material_id = airfoil_ids[i]
-                        # Find closest outer point by 2D distance
-                        closest_i = min(range(n), key=lambda j: (outer_points[j].x() - cx)**2 + (outer_points[j].y() - cy)**2)
-                        normal_x, normal_y = outer_normals[closest_i]
-                        break
-        # Then check ply if not assigned
-        if material_id == -1:
-            for idx_ply, ply in enumerate(line_ply_list):
-                if point_in_polygon(centroid, ply):
-                    material_id = ply_ids[idx_ply]
-                    if ply_normals:
-                        normal_x, normal_y = ply_normals[idx_ply]
-                    break
+        material_id = face_material_ids[idx]
         if material_id != -1:
+            p0 = face.vertex(0).point()
+            p1 = face.vertex(1).point()
+            p2 = face.vertex(2).point()
+            cx = (p0.x() + p1.x() + p2.x()) / 3.0
+            cy = (p0.y() + p1.y() + p2.y()) / 3.0
             xs = [p0.x(), p1.x(), p2.x()]
             ys = [p0.y(), p1.y(), p2.y()]
             color = cmap(material_id / max_id)
             plt.fill(xs, ys, color=color, alpha=0.5)
             centroids.append((cx, cy))
-            normals.append((normal_x, normal_y))
+            normals.append(face_normals[idx])
+        idx += 1
 
     # Plot the input lines without trim using alpha=0.1
     for untrimmed in untrimmed_lines:
@@ -134,7 +98,7 @@ def plot_triangulation(
     if centroids and normals:
         cx_list, cy_list = zip(*centroids)
         nx_list, ny_list = zip(*normals)
-        plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=10, color='blue', alpha=0.7)
+        plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=30, color='blue', alpha=0.4)
 
     rescale_plot(plt.gca())
     plt.axis("equal")
