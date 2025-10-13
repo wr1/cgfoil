@@ -55,7 +55,9 @@ def plot_triangulation(
         colors = ["g-", "c-", "m-", "y-"]
         for idx, inner_points in enumerate(inner_list):
             xs = [p.x() for p in inner_points] + [inner_points[0].x()]
-            ys = [p.y() + offset_y for p in inner_points] + [inner_points[0].y() + offset_y]
+            ys = [p.y() + offset_y for p in inner_points] + [
+                inner_points[0].y() + offset_y
+            ]
             plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
 
         for idx, ply_points in enumerate(line_ply_list):
@@ -145,23 +147,39 @@ def plot_triangulation(
     plt.colorbar(sm, ax=plt.gca(), label="Material ID")
 
     # Add quiver plot for normals and inplanes
-    if centroids and normals:
+    if centroids and normals and inplanes:
         cx_list, cy_list = zip(*centroids)
         if split_view:
             cy_list = [cy - offset_y for cy in cy_list]
+        # print(cy_list)
         nx_list, ny_list = zip(*normals)
-        plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=30, color='blue', alpha=0.4, width=0.0025)
+        plt.quiver(
+            cx_list,
+            cy_list,
+            nx_list,
+            ny_list,
+            scale=30,
+            color="blue",
+            alpha=0.5,
+            width=0.0008,
+        )
 
-    if centroids and inplanes:
         ix_list, iy_list = zip(*inplanes)
-        if split_view:
-            cy_list = [cy - offset_y for cy in cy_list]  # reuse
-        plt.quiver(cx_list, cy_list, ix_list, iy_list, scale=30, color='red', alpha=0.4, width=0.0025)
+        plt.quiver(
+            cx_list,
+            cy_list,
+            ix_list,
+            iy_list,
+            scale=30,
+            color="red",
+            alpha=0.5,
+            width=0.0008,
+        )
 
     rescale_plot(plt.gca())
     plt.axis("equal")
     # Set to fullscreen
     fig = plt.gcf()
-    if hasattr(fig.canvas.manager, 'full_screen_toggle'):
+    if hasattr(fig.canvas.manager, "full_screen_toggle"):
         fig.canvas.manager.full_screen_toggle()
     plt.show()
