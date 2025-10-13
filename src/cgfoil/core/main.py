@@ -25,6 +25,7 @@ def run_cgfoil(
     airfoil_filename: str = "naca0018.dat",
     plot: bool = False,
     vtk: Optional[str] = None,
+    split_view: bool = False,
 ):
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename)
@@ -192,6 +193,7 @@ def run_cgfoil(
             face_normals,
             face_material_ids,
             face_inplanes,
+            split_view,
         )
 
     print(f"Number of vertices: {cdt.number_of_vertices()}")

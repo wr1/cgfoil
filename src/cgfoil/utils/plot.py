@@ -19,6 +19,7 @@ def plot_triangulation(
     face_normals,
     face_material_ids,
     face_inplanes,
+    split_view=False,
 ):
     """Plot the triangulation with filled triangles colored by material id and colorbar."""
 
@@ -35,6 +36,51 @@ def plot_triangulation(
     cmap = plt.cm.viridis
     all_ids = ply_ids + airfoil_ids
     max_id = max(all_ids) if all_ids else 0
+
+    if split_view:
+        # Compute max_y for offset
+        all_points = outer_points[:]
+        for inner in inner_list:
+            all_points.extend(inner)
+        for ply in line_ply_list:
+            all_points.extend(ply)
+        max_y = max(p.y() for p in all_points) if all_points else 0
+        offset_y = 3 * max_y
+
+        # Plot boundaries at +offset_y
+        xs = [p.x() for p in outer_points] + [outer_points[0].x()]
+        ys = [p.y() + offset_y for p in outer_points] + [outer_points[0].y() + offset_y]
+        plt.plot(xs, ys, "r-", linewidth=2)
+
+        colors = ["g-", "c-", "m-", "y-"]
+        for idx, inner_points in enumerate(inner_list):
+            xs = [p.x() for p in inner_points] + [inner_points[0].x()]
+            ys = [p.y() + offset_y for p in inner_points] + [inner_points[0].y() + offset_y]
+            plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
+
+        for idx, ply_points in enumerate(line_ply_list):
+            xs = [p.x() for p in ply_points] + [ply_points[0].x()]
+            ys = [p.y() + offset_y for p in ply_points] + [ply_points[0].y() + offset_y]
+            color = cmap(ply_ids[idx] / max_id)
+            plt.plot(xs, ys, color=color, linewidth=2)
+
+        # Plot untrimmed lines at +offset_y
+        for untrimmed in untrimmed_lines:
+            xs = [p.x() for p in untrimmed]
+            ys = [p.y() + offset_y for p in untrimmed]
+            plt.plot(xs, ys, "k-", alpha=0.1)
+
+        # Annotate web names at +offset_y
+        for idx, line in enumerate(untrimmed_lines):
+            max_y_point = max(line, key=lambda p: p.y())
+            plt.text(
+                max_y_point.x(),
+                max_y_point.y() + offset_y,
+                web_names[idx],
+                fontsize=12,
+                ha="center",
+                va="bottom",
+            )
 
     centroids = []
     normals = []
@@ -57,56 +103,60 @@ def plot_triangulation(
             inplanes.append(face_inplanes[idx])
         idx += 1
 
-    # Plot the input lines without trim using alpha=0.1
-    for untrimmed in untrimmed_lines:
-        xs = [p.x() for p in untrimmed]
-        ys = [p.y() for p in untrimmed]
-        plt.plot(xs, ys, "k-", alpha=0.1)
+    if not split_view:
+        # Plot the input lines without trim using alpha=0.1
+        for untrimmed in untrimmed_lines:
+            xs = [p.x() for p in untrimmed]
+            ys = [p.y() for p in untrimmed]
+            plt.plot(xs, ys, "k-", alpha=0.1)
 
-    # Annotate web names at the upper end
-    for idx, line in enumerate(untrimmed_lines):
-        max_y_point = max(line, key=lambda p: p.y())
-        plt.text(
-            max_y_point.x(),
-            max_y_point.y(),
-            web_names[idx],
-            fontsize=12,
-            ha="center",
-            va="bottom",
-        )
+        # Annotate web names at the upper end
+        for idx, line in enumerate(untrimmed_lines):
+            max_y_point = max(line, key=lambda p: p.y())
+            plt.text(
+                max_y_point.x(),
+                max_y_point.y(),
+                web_names[idx],
+                fontsize=12,
+                ha="center",
+                va="bottom",
+            )
 
-    # Plot the boundaries
-    xs = [p.x() for p in outer_points] + [outer_points[0].x()]
-    ys = [p.y() for p in outer_points] + [outer_points[0].y()]
-    plt.plot(xs, ys, "r-", linewidth=2)
+        # Plot the boundaries
+        xs = [p.x() for p in outer_points] + [outer_points[0].x()]
+        ys = [p.y() for p in outer_points] + [outer_points[0].y()]
+        plt.plot(xs, ys, "r-", linewidth=2)
 
-    colors = ["g-", "c-", "m-", "y-"]
-    for idx, inner_points in enumerate(inner_list):
-        xs = [p.x() for p in inner_points] + [inner_points[0].x()]
-        ys = [p.y() for p in inner_points] + [inner_points[0].y()]
-        plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
+        colors = ["g-", "c-", "m-", "y-"]
+        for idx, inner_points in enumerate(inner_list):
+            xs = [p.x() for p in inner_points] + [inner_points[0].x()]
+            ys = [p.y() for p in inner_points] + [inner_points[0].y()]
+            plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
 
-    for idx, ply_points in enumerate(line_ply_list):
-        xs = [p.x() for p in ply_points] + [ply_points[0].x()]
-        ys = [p.y() for p in ply_points] + [ply_points[0].y()]
-        color = cmap(ply_ids[idx] / max_id)
-        plt.plot(xs, ys, color=color, linewidth=2)
+        for idx, ply_points in enumerate(line_ply_list):
+            xs = [p.x() for p in ply_points] + [ply_points[0].x()]
+            ys = [p.y() for p in ply_points] + [ply_points[0].y()]
+            color = cmap(ply_ids[idx] / max_id)
+            plt.plot(xs, ys, color=color, linewidth=2)
 
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_id))
     sm.set_array([])
     plt.colorbar(sm, ax=plt.gca(), label="Material ID")
 
-    # Add quiver plot for normals
+    # Add quiver plot for normals and inplanes
     if centroids and normals:
         cx_list, cy_list = zip(*centroids)
+        if split_view:
+            cy_list = [cy - offset_y for cy in cy_list]
         nx_list, ny_list = zip(*normals)
-        plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=30, color='blue', alpha=0.4)
+        plt.quiver(cx_list, cy_list, nx_list, ny_list, scale=30, color='blue', alpha=0.4, width=0.0025)
 
-    # Add quiver plot for inplanes
     if centroids and inplanes:
         ix_list, iy_list = zip(*inplanes)
-        plt.quiver(cx_list, cy_list, ix_list, iy_list, scale=30, color='red', alpha=0.4)
+        if split_view:
+            cy_list = [cy - offset_y for cy in cy_list]  # reuse
+        plt.quiver(cx_list, cy_list, ix_list, iy_list, scale=30, color='red', alpha=0.4, width=0.0025)
 
     rescale_plot(plt.gca())
     plt.axis("equal")

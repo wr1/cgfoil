@@ -13,6 +13,7 @@ def main():
     parser.add_argument("-p", "--plot", action="store_true", help="Plot the triangulation")
     parser.add_argument("-v", "--vtk", type=str, help="Output VTK file")
     parser.add_argument("-f", "--file", type=str, default="naca0018.dat", help="Path to airfoil data file (.dat)")
+    parser.add_argument("--split", action="store_true", help="Enable split view plotting")
     args = parser.parse_args()
 
     # Default skins
@@ -95,4 +96,4 @@ def main():
         ),
     }
 
-    run_cgfoil(skins, web_definition, airfoil_filename=args.file, plot=args.plot, vtk=args.vtk)
+    run_cgfoil(skins, web_definition, airfoil_filename=args.file, plot=args.plot, vtk=args.vtk, split_view=args.split)
