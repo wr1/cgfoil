@@ -26,14 +26,14 @@ def compute_face_normals(
         cx = (p0.x() + p1.x() + p2.x()) / 3.0
         cy = (p0.y() + p1.y() + p2.y()) / 3.0
         centroid = type(outer_points[0])(cx, cy)  # Assuming Point_2
-        in_hole = point_in_polygon(centroid, inner_list[-1])
+        in_hole = len(inner_list) > 0 and point_in_polygon(centroid, inner_list[-1])
         material_id = -1
         normal_x, normal_y = 0, 0
         inplane_x, inplane_y = 0, 0
         if not in_hole:
             for i in range(len(inner_list) + 1):
                 if i == 0:
-                    if not point_in_polygon(centroid, inner_list[0]):
+                    if len(inner_list) == 0 or not point_in_polygon(centroid, inner_list[0]):
                         material_id = airfoil_ids[i]
                         # Find closest outer point by 2D distance
                         closest_i = min(

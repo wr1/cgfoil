@@ -29,8 +29,13 @@ dependencies = [
     "pydantic",
     "pyvista",
     "CGAL",
+    "rich",
+    "treeparse",
 ]
 scripts = { "cgfoil" = "cgfoil.cli:main" }
+
+[project.optional-dependencies]
+dev = ["pytest-cov"]
 
 [project.urls]
 Homepage = "https://github.com/wr1/cgfoil"
@@ -46,3 +51,4 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "--cov=cgfoil"

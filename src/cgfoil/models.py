@@ -6,12 +6,14 @@ from pydantic import BaseModel
 
 class Ply(BaseModel):
     """Model for a ply in a web."""
+
     thickness: Union[float, Callable[[float], float]]
     material: int
 
 
 class Web(BaseModel):
     """Model for a web definition."""
+
     points: Tuple[Tuple[float, float], Tuple[float, float]]
     plies: List[Ply]
     normal_ref: List[float] = [0, 0]
@@ -20,6 +22,7 @@ class Web(BaseModel):
 
 class Skin(BaseModel):
     """Model for a skin layer."""
+
     thickness: Union[float, Callable[[float], float]]
     material: int
     sort_index: int

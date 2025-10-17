@@ -16,7 +16,9 @@ from cgfoil.core.trim import (
 from cgfoil.models import Skin, Web
 from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
+from cgfoil.utils.logger import logger
 from cgfoil.utils.plot import plot_triangulation
+from cgfoil.utils.summary import compute_cross_sectional_areas
 
 
 def run_cgfoil(
@@ -26,6 +28,7 @@ def run_cgfoil(
     plot: bool = False,
     vtk: Optional[str] = None,
     split_view: bool = False,
+    plot_filename: Optional[str] = None,
 ):
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename)
@@ -140,11 +143,15 @@ def run_cgfoil(
         outer_tangents,
     )
 
+    # Compute cross-sectional areas
+    areas = compute_cross_sectional_areas(cdt, face_material_ids)
+    logger.info(f"Cross-sectional areas: {areas}")
+
     if vtk:
         try:
             import pyvista as pv
         except ImportError:
-            print("pyvista not available, cannot save VTK")
+            logger.warning("pyvista not available, cannot save VTK")
         else:
             # Collect vertices
             vertices = []
@@ -178,7 +185,7 @@ def run_cgfoil(
             mesh.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in normals_list])
             mesh.cell_data["inplane"] = np.array([[i[0], i[1], 0.0] for i in inplanes_list])
             mesh.save(vtk)
-            print(f"Mesh saved to {vtk}")
+            logger.info(f"Mesh saved to {vtk}")
 
     if plot:
         plot_triangulation(
@@ -194,9 +201,10 @@ def run_cgfoil(
             face_material_ids,
             face_inplanes,
             split_view,
+            plot_filename,
         )
 
-    print(f"Number of vertices: {cdt.number_of_vertices()}")
-    print(f"Number of faces: {cdt.number_of_faces()}")
-    print(f"Web Material ids: {ply_ids}")
-    print(f"Airfoil Material ids: {airfoil_ids}")
+    logger.info(f"Number of vertices: {cdt.number_of_vertices()}")
+    logger.info(f"Number of faces: {cdt.number_of_faces()}")
+    logger.info(f"Web Material ids: {ply_ids}")
+    logger.info(f"Airfoil Material ids: {airfoil_ids}")

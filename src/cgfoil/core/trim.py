@@ -2,6 +2,7 @@
 
 import math
 from CGAL.CGAL_Kernel import Point_2, Segment_2, do_intersect, intersection
+from cgfoil.utils.logger import logger
 
 
 def trim_self_intersecting_curve(points):
@@ -15,7 +16,7 @@ def trim_self_intersecting_curve(points):
             if do_intersect(seg1, seg2):
                 intersecting_indices.add(i)
                 intersecting_indices.add(j)
-    print(
+    logger.info(
         f"Self intersecting indices: {intersecting_indices}, count: {len(intersecting_indices)}"
     )
     if intersecting_indices:

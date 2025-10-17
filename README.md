@@ -15,14 +15,15 @@ uv pip install .
 Run the CLI:
 
 ```bash
-cgfoil --plot --vtk output.vtk
+cgfoil mesh --plot --vtk output.vtk
 ```
 
 Options:
 - `-p, --plot`: Plot the triangulation
 - `-v, --vtk FILE`: Output VTK file
 - `-f, --file FILE`: Path to airfoil data file (.dat), default: naca0018.dat
-- `--split`: Enable split view plotting
+- `-s, --split`: Enable split view plotting
+- `--plot-file FILE`: Save plot to file instead of showing
 
 ## Development
 

@@ -12,7 +12,9 @@ skins = {
         sort_index=1,
     ),
     "cap": Skin(
-        thickness=lambda x: np.interp(x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]),
+        thickness=lambda x: np.interp(
+            x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]
+        ),
         material=1,
         sort_index=2,
     ),
@@ -85,4 +87,6 @@ web_definition = {
 }
 
 # Run the meshing
-run_cgfoil(skins, web_definition, airfoil_filename="naca0018.dat", plot=True, vtk="output.vtk")
+run_cgfoil(
+    skins, web_definition, airfoil_filename="naca0018.dat", plot=True, vtk="output.vtk"
+)

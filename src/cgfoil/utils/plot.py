@@ -20,8 +20,13 @@ def plot_triangulation(
     face_material_ids,
     face_inplanes,
     split_view=False,
+    plot_filename=None,
 ):
     """Plot the triangulation with filled triangles colored by material id and colorbar."""
+
+    # Increase figure size by 2 in both dimensions
+    default_width, default_height = plt.rcParams['figure.figsize']
+    plt.figure(figsize=(default_width + 2, default_height + 2))
 
     def rescale_plot(ax, scale=1.1):
         xmin, xmax = ax.get_xlim()
@@ -63,7 +68,10 @@ def plot_triangulation(
         for idx, ply_points in enumerate(line_ply_list):
             xs = [p.x() for p in ply_points] + [ply_points[0].x()]
             ys = [p.y() + offset_y for p in ply_points] + [ply_points[0].y() + offset_y]
-            color = cmap(ply_ids[idx] / max_id)
+            if max_id == 0:
+                color = cmap(0)
+            else:
+                color = cmap(ply_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
         # Plot untrimmed lines at +offset_y
@@ -98,7 +106,10 @@ def plot_triangulation(
             cy = (p0.y() + p1.y() + p2.y()) / 3.0
             xs = [p0.x(), p1.x(), p2.x()]
             ys = [p0.y(), p1.y(), p2.y()]
-            color = cmap(material_id / max_id)
+            if max_id == 0:
+                color = cmap(0)
+            else:
+                color = cmap(material_id / max_id)
             plt.fill(xs, ys, color=color, alpha=0.5)
             centroids.append((cx, cy))
             normals.append(face_normals[idx])
@@ -138,7 +149,10 @@ def plot_triangulation(
         for idx, ply_points in enumerate(line_ply_list):
             xs = [p.x() for p in ply_points] + [ply_points[0].x()]
             ys = [p.y() for p in ply_points] + [ply_points[0].y()]
-            color = cmap(ply_ids[idx] / max_id)
+            if max_id == 0:
+                color = cmap(0)
+            else:
+                color = cmap(ply_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
     # Add colorbar
@@ -178,8 +192,12 @@ def plot_triangulation(
 
     rescale_plot(plt.gca())
     plt.axis("equal")
+    plt.tight_layout()
     # Set to fullscreen
     fig = plt.gcf()
     if hasattr(fig.canvas.manager, "full_screen_toggle"):
         fig.canvas.manager.full_screen_toggle()
-    plt.show()
+    if plot_filename:
+        plt.savefig(plot_filename)
+    else:
+        plt.show()
