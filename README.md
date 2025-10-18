@@ -12,10 +12,34 @@ uv pip install .
 
 ## Usage
 
-Run the CLI:
+Generate mesh from YAML:
 
 ```bash
-cgfoil mesh --plot --vtk output.vtk
+cgfoil mesh examples/airfoil_mesh.yaml -o mesh.pkl
+```
+
+Plot existing mesh:
+
+```bash
+cgfoil plot mesh.pkl --plot-file plot.png
+```
+
+Export to VTK:
+
+```bash
+cgfoil export vtk mesh.pkl output.vtk
+```
+
+Export to ANBA:
+
+```bash
+cgfoil export anba mesh.pkl output.json
+```
+
+Run with defaults:
+
+```bash
+cgfoil run --plot --vtk output.vtk
 ```
 
 Options:
@@ -23,7 +47,11 @@ Options:
 - `-v, --vtk FILE`: Output VTK file
 - `-f, --file FILE`: Path to airfoil data file (.dat), default: naca0018.dat
 - `-s, --split`: Enable split view plotting
-- `--plot-file FILE`: Save plot to file instead of showing
+- `--plot-file FILE`: Save plot to file
+
+## Examples
+
+See the `examples/` directory for programmatic usage, including loading from YAML.
 
 ## Development
 

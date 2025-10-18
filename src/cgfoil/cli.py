@@ -1,12 +1,100 @@
 """Command line interface for cgfoil."""
 
-import numpy as np
-from treeparse import cli, command, option
-from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply
+import pickle
+import yaml
+import json
+from pathlib import Path
+from treeparse import cli, command, argument, option, group
+from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
+from cgfoil.models import AirfoilMesh
 
 
-def run(
+def mesh_from_yaml(yaml_file: str, output_mesh: str = None):
+    """Generate mesh from YAML file."""
+    with open(yaml_file, "r") as f:
+        data = yaml.safe_load(f)
+    mesh = AirfoilMesh(**data)
+    mesh_result = generate_mesh(mesh)
+    if output_mesh:
+        with open(output_mesh, "wb") as f:
+            pickle.dump(mesh_result, f)
+    return mesh_result
+
+
+def plot_existing_mesh(mesh_file: str, plot_filename: str = None, split: bool = False):
+    """Plot an existing mesh from file."""
+    with open(mesh_file, "rb") as f:
+        mesh_result = pickle.load(f)
+    plot_mesh(mesh_result, plot_filename, split)
+
+
+def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
+    """Export mesh to VTK file."""
+    with open(mesh_file, "rb") as f:
+        mesh_result = pickle.load(f)
+    try:
+        import pyvista as pv
+        import numpy as np
+    except ImportError:
+        print("pyvista not available")
+        return
+    mesh_obj = pv.UnstructuredGrid(
+        mesh_result.faces,
+        [pv.CellType.TRIANGLE] * len(mesh_result.faces),
+        mesh_result.vertices,
+    )
+    mesh_obj.cell_data["material_id"] = mesh_result.face_material_ids
+    mesh_obj.cell_data["normals"] = np.array(
+        [[n[0], n[1], 0.0] for n in mesh_result.face_normals]
+    )
+    mesh_obj.cell_data["inplane"] = np.array(
+        [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
+    )
+    mesh_obj.save(vtk_file)
+    print(f"Mesh exported to {vtk_file}")
+
+
+def export_mesh_to_anba(mesh_file: str, anba_file: str):
+    """Export mesh to ANBA format (JSON)."""
+    with open(mesh_file, "rb") as f:
+        mesh_result = pickle.load(f)
+    # Create serializable data
+    points = mesh_result.vertices
+    cells = [face[1:] for face in mesh_result.faces]  # Remove the 3
+    degree = 2
+    unique_materials = sorted(set(mesh_result.face_material_ids))
+    max_id = max(unique_materials) if unique_materials else 0
+    mat_library = [
+        {
+            "type": "isotropic",
+            "E": 98000000.0,
+            "nu": 0.3,
+            "rho": 7850.0,
+        }
+        for _ in range(max_id + 1)
+    ]
+    material_ids = mesh_result.face_material_ids
+    fiber_orientations = [0.0] * len(cells)
+    plane_orientations = [0.0] * len(cells)
+    scaling_constraint = 1.0
+    singular = False
+    data = {
+        "points": points,
+        "cells": cells,
+        "degree": degree,
+        "mat_library": mat_library,
+        "material_ids": material_ids,
+        "fiber_orientations": fiber_orientations,
+        "plane_orientations": plane_orientations,
+        "scaling_constraint": scaling_constraint,
+        "singular": singular,
+    }
+    with open(anba_file, "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"Mesh exported to {anba_file}")
+
+
+def run_mesh(
     plot: bool = False,
     vtk: str = None,
     file: str = "naca0018.dat",
@@ -15,99 +103,28 @@ def run(
 ):
     # Default skins
     skins = {
-        "outer_skin": Skin(
-            thickness=lambda x: np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
-            material=2,
-            sort_index=1,
-        ),
-        "cap": Skin(
-            thickness=lambda x: np.interp(
-                x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]
-            ),
-            material=1,
-            sort_index=2,
-        ),
-        "core": Skin(
-            thickness=lambda x: np.interp(
-                x,
-                [0.05, 0.1, 0.2, 0.20001, 0.5, 0.5001, 0.7, 0.9],
-                [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0],
-            ),
-            material=3,
-            sort_index=3,
-        ),
-        "te_ud": Skin(
-            thickness=lambda x: np.interp(
-                x, [0.7, 0.75, 0.8, 0.85], [0, 0.01, 0.01, 0]
-            ),
-            material=4,
-            sort_index=4,
-        ),
-        "inner_skin": Skin(
-            thickness=lambda x: np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
-            material=2,
-            sort_index=5,
-        ),
+        "outer_skin": {
+            "thickness": {"type": "constant", "value": 0.005},
+            "material": 2,
+            "sort_index": 1,
+        },
+        "inner_skin": {
+            "thickness": {"type": "constant", "value": 0.005},
+            "material": 2,
+            "sort_index": 2,
+        },
     }
-
-    # Default web definition
-    web_definition = {
-        "web1": Web(
-            points=((0.25, -0.2), (0.25, 0.2)),
-            plies=[
-                Ply(thickness=0.004, material=5),
-                Ply(
-                    thickness=0.008,
-                    # thickness=lambda y: np.interp(
-                    #     y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
-                    # ),
-                    material=3,
-                ),
-                Ply(thickness=0.004, material=5),
-            ],
-            normal_ref=[1, 0],
-            n_cell=20,
-        ),
-        "web2": Web(
-            points=((0.4, -0.2), (0.4, 0.2)),
-            plies=[
-                Ply(thickness=0.004, material=5),
-                Ply(
-                    thickness=0.008,
-                    # lambda y: np.interp(
-                    #     y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
-                    # ),
-                    material=3,
-                ),
-                Ply(thickness=0.004, material=5),
-            ],
-            normal_ref=[-1, 0],
-            n_cell=15,
-        ),
-        "web3": Web(
-            points=((0.775, -0.1), (0.775, 0.1)),
-            plies=[
-                Ply(thickness=0.004, material=5),
-                Ply(
-                    thickness=0.008,
-                    material=3,
-                ),
-                Ply(thickness=0.004, material=5),
-            ],
-            normal_ref=[-1, 0],
-            n_cell=15,
-        ),
-    }
-
-    run_cgfoil(
-        skins,
-        web_definition,
+    webs = {}
+    mesh = AirfoilMesh(
+        skins=skins,
+        webs=webs,
         airfoil_filename=file,
         plot=plot,
         vtk=vtk,
         split_view=split,
         plot_filename=plot_file,
     )
+    run_cgfoil(mesh)
 
 
 app = cli(
@@ -122,47 +139,108 @@ app = cli(
 
 mesh_cmd = command(
     name="mesh",
-    help="Run the meshing tool.",
-    callback=run,
+    help="Generate mesh from YAML file.",
+    callback=mesh_from_yaml,
+    arguments=[
+        argument(
+            name="yaml_file", arg_type=str, help="Path to YAML configuration file"
+        ),
+    ],
     options=[
         option(
-            flags=["--plot", "-p"],
-            arg_type=bool,
-            default=False,
-            help="Plot the triangulation",
-            sort_key=0,
-        ),
-        option(
-            flags=["--vtk", "-v"],
+            flags=["--output-mesh", "-o"],
             arg_type=str,
-            default=None,
-            help="Output VTK file",
-            sort_key=1,
+            help="Output mesh file (pickle)",
         ),
+    ],
+)
+app.commands.append(mesh_cmd)
+
+plot_cmd = command(
+    name="plot",
+    help="Plot an existing mesh.",
+    callback=plot_existing_mesh,
+    arguments=[
+        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+    ],
+    options=[
         option(
-            flags=["--file", "-f"],
+            flags=["--plot-file"],
+            dest="plot_filename",
             arg_type=str,
-            default="naca0018.dat",
-            help="Path to airfoil data file (.dat)",
-            sort_key=2,
+            help="Save plot to file",
         ),
         option(
             flags=["--split", "-s"],
             arg_type=bool,
             default=False,
             help="Enable split view plotting",
-            sort_key=3,
+        ),
+    ],
+)
+app.commands.append(plot_cmd)
+
+export_group = group(name="export", help="Export mesh to various formats.")
+app.subgroups.append(export_group)
+
+vtk_cmd = command(
+    name="vtk",
+    help="Export mesh to VTK file.",
+    callback=export_mesh_to_vtk,
+    arguments=[
+        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+        argument(name="vtk_file", arg_type=str, help="Output VTK file"),
+    ],
+)
+export_group.commands.append(vtk_cmd)
+
+anba_cmd = command(
+    name="anba",
+    help="Export mesh to ANBA format (JSON).",
+    callback=export_mesh_to_anba,
+    arguments=[
+        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+        argument(name="anba_file", arg_type=str, help="Output ANBA file"),
+    ],
+)
+export_group.commands.append(anba_cmd)
+
+run_cmd = command(
+    name="run",
+    help="Run meshing with defaults.",
+    callback=run_mesh,
+    options=[
+        option(
+            flags=["--plot", "-p"],
+            arg_type=bool,
+            default=False,
+            help="Plot the triangulation",
+        ),
+        option(
+            flags=["--vtk", "-v"],
+            arg_type=str,
+            help="Output VTK file",
+        ),
+        option(
+            flags=["--file", "-f"],
+            arg_type=str,
+            default="naca0018.dat",
+            help="Path to airfoil data file (.dat)",
+        ),
+        option(
+            flags=["--split", "-s"],
+            arg_type=bool,
+            default=False,
+            help="Enable split view plotting",
         ),
         option(
             flags=["--plot-file"],
             arg_type=str,
-            default=None,
-            help="Save plot to file instead of showing",
-            sort_key=4,
+            help="Save plot to file",
         ),
     ],
 )
-app.commands.append(mesh_cmd)
+app.commands.append(run_cmd)
 
 
 def main():

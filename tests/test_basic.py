@@ -10,7 +10,7 @@ from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
 from cgfoil.core.trim import adjust_endpoints, trim_self_intersecting_curve
-from cgfoil.models import Ply, Skin, Web
+from cgfoil.models import Ply, Skin, Web, AirfoilMesh, Thickness
 from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.plot import plot_triangulation
@@ -24,12 +24,15 @@ def test_import():
 
 
 def test_models():
+    thickness = Thickness(type='constant', value=0.1)
+    assert thickness.compute([0.5], [0.5], [0.5]) == [0.1]
+
     ply = Ply(thickness=0.1, material=1)
     assert ply.thickness == 0.1
     assert ply.material == 1
 
-    skin = Skin(thickness=0.2, material=2, sort_index=1)
-    assert skin.thickness == 0.2
+    skin = Skin(thickness=thickness, material=2, sort_index=1)
+    assert skin.thickness.type == 'constant'
     assert skin.material == 2
     assert skin.sort_index == 1
 
@@ -38,6 +41,10 @@ def test_models():
     assert len(web.plies) == 1
     assert web.normal_ref == [0, 1]
     assert web.n_cell == 10
+
+    mesh = AirfoilMesh(skins={"skin": skin}, webs={"web": web})
+    assert "skin" in mesh.skins
+    assert "web" in mesh.webs
 
 
 def test_point_in_polygon():
@@ -178,9 +185,17 @@ def test_run_cgfoil(mock_savefig):
     with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
+    thickness = Thickness(type='constant', value=0.01)
     skins = {
-        "skin": Skin(thickness=lambda x: 0.01, material=1, sort_index=1)
+        "skin": Skin(thickness=thickness, material=1, sort_index=1)
     }
     web_definition = {}
-    run_cgfoil(skins, web_definition, airfoil_filename=fname, plot=True, vtk=None, split_view=False, plot_filename='test.png')
+    mesh = AirfoilMesh(
+        skins=skins,
+        webs=web_definition,
+        airfoil_filename=fname,
+        plot=True,
+        plot_filename='test.png'
+    )
+    run_cgfoil(mesh)
     mock_savefig.assert_called_once_with('test.png')

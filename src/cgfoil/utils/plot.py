@@ -3,12 +3,15 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+import math
+from collections import defaultdict
 from CGAL.CGAL_Kernel import Point_2
 from cgfoil.utils.geometry import point_in_polygon
 
 
 def plot_triangulation(
-    cdt,
+    vertices,
+    faces,
     outer_points,
     inner_list,
     line_ply_list,
@@ -41,6 +44,17 @@ def plot_triangulation(
     cmap = plt.cm.viridis
     all_ids = ply_ids + airfoil_ids
     max_id = max(all_ids) if all_ids else 0
+
+    # Compute ta and tr
+    x_list = [p.x() for p in outer_points]
+    ta_list = [0.0]
+    for i in range(1, len(outer_points)):
+        dx = outer_points[i].x() - outer_points[i-1].x()
+        dy = outer_points[i].y() - outer_points[i-1].y()
+        dist = math.sqrt(dx**2 + dy**2)
+        ta_list.append(ta_list[-1] + dist)
+    total_length = ta_list[-1]
+    tr_list = [t / total_length for t in ta_list]
 
     if split_view:
         # Compute max_y for offset
@@ -96,16 +110,17 @@ def plot_triangulation(
     normals = []
     inplanes = []
     idx = 0
-    for face in cdt.finite_faces():
+    for face in faces:
         material_id = face_material_ids[idx]
         if material_id != -1:
-            p0 = face.vertex(0).point()
-            p1 = face.vertex(1).point()
-            p2 = face.vertex(2).point()
-            cx = (p0.x() + p1.x() + p2.x()) / 3.0
-            cy = (p0.y() + p1.y() + p2.y()) / 3.0
-            xs = [p0.x(), p1.x(), p2.x()]
-            ys = [p0.y(), p1.y(), p2.y()]
+            _, v0, v1, v2 = face
+            p0 = vertices[v0][:2]
+            p1 = vertices[v1][:2]
+            p2 = vertices[v2][:2]
+            cx = (p0[0] + p1[0] + p2[0]) / 3.0
+            cy = (p0[1] + p1[1] + p2[1]) / 3.0
+            xs = [p0[0], p1[0], p2[0]]
+            ys = [p0[1], p1[1], p2[1]]
             if max_id == 0:
                 color = cmap(0)
             else:
@@ -155,6 +170,37 @@ def plot_triangulation(
                 color = cmap(ply_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
+    # Add dashed axvline at position of maximum thickness
+    all_points = outer_points[:]
+    for inner in inner_list:
+        all_points.extend(inner)
+    x_to_ys = defaultdict(list)
+    for p in all_points:
+        x_rounded = round(p.x(), 4)
+        x_to_ys[x_rounded].append(p.y())
+    max_thickness = 0
+    max_thickness_x = 0
+    for x, ys in x_to_ys.items():
+        thickness = max(ys) - min(ys)
+        if thickness > max_thickness:
+            max_thickness = thickness
+            max_thickness_x = x
+    plt.axvline(max_thickness_x, linestyle='--', color='black', linewidth=1)
+    # Find indices for ta and tr at this x
+    idxs = [i for i in range(len(x_list)) if abs(x_list[i] - max_thickness_x) < 1e-3]
+    ta_vals = [ta_list[i] for i in idxs]
+    tr_vals = [tr_list[i] for i in idxs]
+    # Add text label
+    rescale_plot(plt.gca())
+    _, ymax = plt.ylim()
+    if len(ta_vals) == 2:
+        ta_str = f'{ta_vals[0]:.3f}, {ta_vals[1]:.3f}'
+        tr_str = f'{tr_vals[0]:.3f}, {tr_vals[1]:.3f}'
+    else:
+        ta_str = f'{ta_vals[0]:.3f}' if ta_vals else 'N/A'
+        tr_str = f'{tr_vals[0]:.3f}' if tr_vals else 'N/A'
+    plt.text(max_thickness_x, ymax + 0.01, f'x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nthickness={max_thickness:.4f}', ha='center', va='bottom', fontsize=10, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_id))
     sm.set_array([])
@@ -190,8 +236,8 @@ def plot_triangulation(
             width=0.0008,
         )
 
-    rescale_plot(plt.gca())
     plt.axis("equal")
+    plt.grid(True)
     plt.tight_layout()
     # Set to fullscreen
     fig = plt.gcf()

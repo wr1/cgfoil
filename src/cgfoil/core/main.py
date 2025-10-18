@@ -13,7 +13,7 @@ from cgfoil.core.trim import (
     trim_line,
     trim_self_intersecting_curve,
 )
-from cgfoil.models import Skin, Web
+from cgfoil.models import Skin, Web, AirfoilMesh, MeshResult
 from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
@@ -21,17 +21,25 @@ from cgfoil.utils.plot import plot_triangulation
 from cgfoil.utils.summary import compute_cross_sectional_areas
 
 
-def run_cgfoil(
-    skins: Dict[str, Skin],
-    web_definition: Dict[str, Web],
-    airfoil_filename: str = "naca0018.dat",
-    plot: bool = False,
-    vtk: Optional[str] = None,
-    split_view: bool = False,
-    plot_filename: Optional[str] = None,
-):
+def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
+    skins = mesh.skins
+    web_definition = mesh.webs
+    airfoil_filename = mesh.airfoil_filename
+    n_elem = mesh.n_elem
+
     # Load airfoil points (outer)
-    outer_points = load_airfoil(airfoil_filename)
+    outer_points = load_airfoil(airfoil_filename, n_elem)
+
+    # Compute coordinates: x, ta (absolute arc length), tr (relative arc length)
+    x = [p.x() for p in outer_points]
+    ta = [0.0]
+    for i in range(1, len(outer_points)):
+        dx = outer_points[i].x() - outer_points[i-1].x()
+        dy = outer_points[i].y() - outer_points[i-1].y()
+        dist = math.sqrt(dx**2 + dy**2)
+        ta.append(ta[-1] + dist)
+    total_length = ta[-1]
+    tr = [t / total_length for t in ta]
 
     # Compute normals for outer points (outward)
     n = len(outer_points)
@@ -53,9 +61,11 @@ def run_cgfoil(
         outer_tangents.append((tx, ty))
 
     # Ply thicknesses for airfoil
-    x = [p.x() for p in outer_points]
     sorted_skins = sorted(skins.values(), key=lambda s: s.sort_index)
-    ply_thicknesses = [s.thickness(x) for s in sorted_skins]
+    ply_thicknesses = []
+    for s in sorted_skins:
+        thickness_result = s.thickness.compute(x, ta, tr)
+        ply_thicknesses.append(thickness_result)
     inner_list = []
     current = outer_points
     for thickness in ply_thicknesses:
@@ -65,10 +75,10 @@ def run_cgfoil(
 
     # Calculate protrusion distance from last ply thickness
     last_ply = ply_thicknesses[-1]
-    if isinstance(last_ply, list):
+    if isinstance(last_ply, (list, np.ndarray)):
         protrusion_distance = 0.5 * max(last_ply)
     else:
-        protrusion_distance = 0.5 * max(last_ply)
+        protrusion_distance = 0.5 * last_ply
     if protrusion_distance == 0:
         protrusion_distance = 1e-3
 
@@ -130,6 +140,23 @@ def run_cgfoil(
         for i in range(len(ply_points)):
             cdt.insert_constraint(ply_points[i], ply_points[(i + 1) % len(ply_points)])
 
+    # Collect vertices and faces
+    vertices = []
+    vertex_map = {}
+    idx = 0
+    for v in cdt.finite_vertices():
+        vertex_map[v] = idx
+        vertices.append([v.point().x(), v.point().y(), 0.0])
+        idx += 1
+    faces = []
+    for face in cdt.finite_faces():
+        material_id = -1  # Will compute below
+        if material_id != -1:
+            v0 = vertex_map[face.vertex(0)]
+            v1 = vertex_map[face.vertex(1)]
+            v2 = vertex_map[face.vertex(2)]
+            faces.append([3, v0, v1, v2])
+
     # Compute face normals and material IDs
     face_normals, face_material_ids, face_inplanes = compute_face_normals(
         cdt,
@@ -143,68 +170,98 @@ def run_cgfoil(
         outer_tangents,
     )
 
+    # Collect faces with material_id != -1 and filter the lists
+    faces = []
+    filtered_face_normals = []
+    filtered_face_material_ids = []
+    filtered_face_inplanes = []
+    idx = 0
+    for face in cdt.finite_faces():
+        material_id = face_material_ids[idx]
+        if material_id != -1:
+            v0 = vertex_map[face.vertex(0)]
+            v1 = vertex_map[face.vertex(1)]
+            v2 = vertex_map[face.vertex(2)]
+            faces.append([3, v0, v1, v2])
+            filtered_face_normals.append(face_normals[idx])
+            filtered_face_material_ids.append(material_id)
+            filtered_face_inplanes.append(face_inplanes[idx])
+        idx += 1
+
     # Compute cross-sectional areas
     areas = compute_cross_sectional_areas(cdt, face_material_ids)
-    logger.info(f"Cross-sectional areas: {areas}")
 
-    if vtk:
+    # Convert to serializable lists
+    outer_points_list = [[p.x(), p.y()] for p in outer_points]
+    inner_list_list = [[[p.x(), p.y()] for p in inner] for inner in inner_list]
+    line_ply_list_list = [[[p.x(), p.y()] for p in ply] for ply in line_ply_list]
+    untrimmed_lines_list = [[[p.x(), p.y()] for p in line] for line in untrimmed_lines]
+
+    return MeshResult(
+        vertices=vertices,
+        faces=faces,
+        outer_points=outer_points_list,
+        inner_list=inner_list_list,
+        line_ply_list=line_ply_list_list,
+        untrimmed_lines=untrimmed_lines_list,
+        ply_ids=ply_ids,
+        airfoil_ids=airfoil_ids,
+        web_names=web_names,
+        face_normals=filtered_face_normals,
+        face_material_ids=filtered_face_material_ids,
+        face_inplanes=filtered_face_inplanes,
+        areas=areas,
+    )
+
+
+def plot_mesh(mesh_result: MeshResult, plot_filename: Optional[str] = None, split_view: bool = False):
+    # Convert back to Point_2 for plotting
+    from CGAL.CGAL_Kernel import Point_2
+    outer_points = [Point_2(*p) for p in mesh_result.outer_points]
+    inner_list = [[Point_2(*p) for p in inner] for inner in mesh_result.inner_list]
+    line_ply_list = [[Point_2(*p) for p in ply] for ply in mesh_result.line_ply_list]
+    untrimmed_lines = [[Point_2(*p) for p in line] for line in mesh_result.untrimmed_lines]
+    plot_triangulation(
+        mesh_result.vertices,
+        mesh_result.faces,
+        outer_points,
+        inner_list,
+        line_ply_list,
+        untrimmed_lines,
+        mesh_result.ply_ids,
+        mesh_result.airfoil_ids,
+        mesh_result.web_names,
+        mesh_result.face_normals,
+        mesh_result.face_material_ids,
+        mesh_result.face_inplanes,
+        split_view,
+        plot_filename,
+    )
+
+
+def run_cgfoil(mesh: AirfoilMesh):
+    mesh_result = generate_mesh(mesh)
+    logger.info(f"Cross-sectional areas: {mesh_result.areas}")
+
+    if mesh.vtk:
         try:
             import pyvista as pv
         except ImportError:
             logger.warning("pyvista not available, cannot save VTK")
         else:
-            # Collect vertices
-            vertices = []
-            vertex_map = {}
-            idx = 0
-            for v in cdt.finite_vertices():
-                vertex_map[v] = idx
-                vertices.append([v.point().x(), v.point().y(), 0.0])
-                idx += 1
-            # Collect faces, materials, and normals
-            faces = []
-            cell_materials = []
-            normals_list = []
-            inplanes_list = []
-            idx = 0
-            for face in cdt.finite_faces():
-                material_id = face_material_ids[idx]
-                if material_id != -1:
-                    v0 = vertex_map[face.vertex(0)]
-                    v1 = vertex_map[face.vertex(1)]
-                    v2 = vertex_map[face.vertex(2)]
-                    faces.append([3, v0, v1, v2])
-                    cell_materials.append(material_id)
-                    normals_list.append(face_normals[idx])
-                    inplanes_list.append(face_inplanes[idx])
-                idx += 1
-            mesh = pv.UnstructuredGrid(
-                faces, [pv.CellType.TRIANGLE] * len(faces), vertices
+            mesh_obj = pv.UnstructuredGrid(
+                mesh_result.faces, [pv.CellType.TRIANGLE] * len(mesh_result.faces), mesh_result.vertices
             )
-            mesh.cell_data["material_id"] = cell_materials
-            mesh.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in normals_list])
-            mesh.cell_data["inplane"] = np.array([[i[0], i[1], 0.0] for i in inplanes_list])
-            mesh.save(vtk)
-            logger.info(f"Mesh saved to {vtk}")
+            mesh_obj.cell_data["material_id"] = mesh_result.face_material_ids
+            mesh_obj.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in mesh_result.face_normals])
+            mesh_obj.cell_data["inplane"] = np.array([[i[0], i[1], 0.0] for i in mesh_result.face_inplanes])
+            mesh_obj.save(mesh.vtk)
+            logger.info(f"Mesh saved to {mesh.vtk}")
 
-    if plot:
-        plot_triangulation(
-            cdt,
-            outer_points,
-            inner_list,
-            line_ply_list,
-            untrimmed_lines,
-            ply_ids,
-            airfoil_ids,
-            web_names,
-            face_normals,
-            face_material_ids,
-            face_inplanes,
-            split_view,
-            plot_filename,
-        )
+    if mesh.plot:
+        plot_mesh(mesh_result, mesh.plot_filename, mesh.split_view)
 
-    logger.info(f"Number of vertices: {cdt.number_of_vertices()}")
-    logger.info(f"Number of faces: {cdt.number_of_faces()}")
-    logger.info(f"Web Material ids: {ply_ids}")
-    logger.info(f"Airfoil Material ids: {airfoil_ids}")
+    logger.info(f"Number of vertices: {len(mesh_result.vertices)}")
+    logger.info(f"Number of faces: {len(mesh_result.faces)}")
+    logger.info(f"Web Material ids: {mesh_result.ply_ids}")
+    logger.info(f"Airfoil Material ids: {mesh_result.airfoil_ids}")

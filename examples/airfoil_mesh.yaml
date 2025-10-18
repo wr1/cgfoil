@@ -1,0 +1,86 @@
+skins:
+  outer_skin:
+    thickness:
+      type: interp
+      coord: x
+      x: [0.0, 0.9, 1.0]
+      y: [0.005, 0.005, 0.002]
+    material: biax
+    sort_index: 1
+  cap1:
+    thickness:
+      type: condition
+      value: 0.02
+      else_value: 0.0
+      conditions:
+        - coord: x
+          range: [0.15, 0.5]
+        - coord: tr
+          range: [0.0, 0.5]
+    material: 1
+    sort_index: 2
+  cap2:
+    thickness:
+      type: condition
+      value: 0.015
+      else_value: 0.0
+      conditions:
+        - coord: x
+          range: [0.15, 0.5]
+        - coord: tr
+          range: [0.5, 1.0]
+    material: 1
+    sort_index: 3
+  core:
+    thickness:
+      type: interp
+      coord: x
+      x: [0.05, 0.1, 0.15, 0.15001, 0.5, 0.5001, 0.7, 0.9]
+      y: [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0]
+    material: 3
+    sort_index: 4
+  inner_skin:
+    thickness:
+      type: constant
+      coord: x
+      value: 0.005
+    material: 2
+    sort_index: 5
+webs:
+  web1:
+    points: [[0.25, -0.1], [0.25, 0.1]]
+    plies:
+      - thickness: 0.004
+        material: 5
+      - thickness: 0.008
+        material: 3
+      - thickness: 0.004
+        material: 5
+    normal_ref: [1, 0]
+    n_cell: 20
+  web2:
+    points: [[0.4, -0.1], [0.4, 0.1]]
+    plies:
+      - thickness: 0.004
+        material: 5
+      - thickness: 0.008
+        material: 3
+      - thickness: 0.004
+        material: 5
+    normal_ref: [-1, 0]
+    n_cell: 15
+airfoil_filename: naca0018.dat
+n_elem: 100
+plot: true
+vtk: output.vtk
+materials:
+  carbon:
+    type: 'orthotropic'
+    E: [140e9,...]
+    G: [..,..,..]
+    nu: [..,..,..]
+  biax:
+    type: "isotropic"
+    E: 20e9
+    nu: 0.45
+    rho: 1900

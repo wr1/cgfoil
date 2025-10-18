@@ -31,6 +31,7 @@ dependencies = [
     "CGAL",
     "rich",
     "treeparse",
+    "scipy",
 ]
 scripts = { "cgfoil" = "cgfoil.cli:main" }
 
