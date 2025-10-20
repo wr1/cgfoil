@@ -23,8 +23,8 @@ def load_airfoil(filename, n_elem=None):
         y_orig = [p.y() for p in points]
         dists = [0.0]
         for i in range(1, len(points)):
-            dx = x_orig[i] - x_orig[i-1]
-            dy = y_orig[i] - y_orig[i-1]
+            dx = x_orig[i] - x_orig[i - 1]
+            dy = y_orig[i] - y_orig[i - 1]
             dist = math.sqrt(dx**2 + dy**2)
             dists.append(dists[-1] + dist)
         total_length = dists[-1]
