@@ -5,10 +5,9 @@ import yaml
 import json
 import sys
 import math
-from pathlib import Path
 import pandas as pd
 from treeparse import cli, command, argument, option, group
-from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
+from cgfoil.core.main import generate_mesh, plot_mesh
 from cgfoil.models import AirfoilMesh
 from cgfoil.utils.logger import logger
 
@@ -122,25 +121,30 @@ def summarize_mesh(mesh_file: str, output: str = None):
             total_mass += mass
         else:
             name = "N/A"
-            mass = float('nan')
-        rows.append({
-            "Material ID": mat_id,
-            "Material Name": name,
-            "Area": area,
-            "Mass/m": mass,
-        })
+            mass = float("nan")
+        rows.append(
+            {
+                "Material ID": mat_id,
+                "Material Name": name,
+                "Area": area,
+                "Mass/m": mass,
+            }
+        )
     if mesh_result.materials:
-        rows.append({
-            "Material ID": "Total",
-            "Material Name": "",
-            "Area": "",
-            "Mass/m": total_mass,
-        })
+        rows.append(
+            {
+                "Material ID": "Total",
+                "Material Name": "",
+                "Area": "",
+                "Mass/m": total_mass,
+            }
+        )
     df = pd.DataFrame(rows)
     if output:
         df.to_csv(output, index=False)
         logger.info(f"Summary saved to {output}")
     print(df.to_string())
+
 
 app = cli(
     name="cgfoil",
