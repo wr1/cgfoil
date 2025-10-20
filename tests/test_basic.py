@@ -1,11 +1,12 @@
 """Basic tests for cgfoil."""
 
-import pytest
 import tempfile
 from unittest.mock import patch
+from pathlib import Path
+import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-from cgfoil.core.main import run_cgfoil
+from cgfoil.core.main import run_cgfoil, generate_mesh
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
@@ -24,7 +25,7 @@ def test_import():
 
 
 def test_models():
-    thickness = Thickness(type='constant', value=0.1)
+    thickness = Thickness(type="constant", value=0.1)
     assert thickness.compute([0.5], [0.5], [0.5]) == [0.1]
 
     ply = Ply(thickness=0.1, material=1)
@@ -32,7 +33,7 @@ def test_models():
     assert ply.material == 1
 
     skin = Skin(thickness=thickness, material=2, sort_index=1)
-    assert skin.thickness.type == 'constant'
+    assert skin.thickness.type == "constant"
     assert skin.material == 2
     assert skin.sort_index == 1
 
@@ -147,7 +148,8 @@ def test_compute_cross_sectional_areas():
     assert 0 in areas
     assert areas[0] > 0
 
-@patch('matplotlib.pyplot.show')
+
+@patch("matplotlib.pyplot.show")
 def test_plot_triangulation(mock_show):
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
     cdt.insert_constraint(Point_2(0, 0), Point_2(1, 0))
@@ -195,22 +197,45 @@ def test_plot_triangulation(mock_show):
     )
     mock_show.assert_called_once()
 
-@patch('matplotlib.pyplot.savefig')
+
+@patch("matplotlib.pyplot.savefig")
 def test_run_cgfoil(mock_savefig):
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
-    thickness = Thickness(type='constant', value=0.01)
-    skins = {
-        "skin": Skin(thickness=thickness, material=1, sort_index=1)
-    }
+    thickness = Thickness(type="constant", value=0.01)
+    skins = {"skin": Skin(thickness=thickness, material=1, sort_index=1)}
     web_definition = {}
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
         airfoil_filename=fname,
         plot=True,
-        plot_filename='test.png'
+        plot_filename="test.png",
     )
     run_cgfoil(mesh)
-    mock_savefig.assert_called_once_with('test.png')
+    mock_savefig.assert_called_once_with("test.png")
+
+
+def test_example_case():
+    yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
+    with open(yaml_file, "r") as f:
+        data = yaml.safe_load(f)
+    mesh = AirfoilMesh(**data)
+    mesh.airfoil_filename = str(Path(__file__).parent / "naca0018.dat")
+    mesh_result = generate_mesh(mesh)
+    expected_areas = {0: 0.011635, 1: 0.015883, 2: 0.020083, 3: 0.001948}
+    for mat, area in expected_areas.items():
+        assert abs(mesh_result.areas[mat] - area) < 1e-6
+    if mesh_result.materials:
+        expected_masses = {0: 22.105773, 1: 1.905999, 2: 38.157430, 3: 3.506517}
+        total = 65.675719
+        for mat, mass in expected_masses.items():
+            rho = mesh_result.materials[mat]["rho"]
+            computed_mass = mesh_result.areas[mat] * rho
+            assert abs(computed_mass - mass) < 1e-5
+        computed_total = sum(
+            mesh_result.areas[mat] * mesh_result.materials[mat]["rho"]
+            for mat in mesh_result.areas
+        )
+        assert abs(computed_total - total) < 1e-5
