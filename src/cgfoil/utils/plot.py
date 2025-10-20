@@ -1,12 +1,8 @@
 """Plotting utilities."""
 
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import numpy as np
 import math
 from collections import defaultdict
-from CGAL.CGAL_Kernel import Point_2
-from cgfoil.utils.geometry import point_in_polygon
 
 
 def plot_triangulation(
@@ -28,7 +24,7 @@ def plot_triangulation(
     """Plot the triangulation with filled triangles colored by material id and colorbar."""
 
     # Increase figure size by 2 in both dimensions
-    default_width, default_height = plt.rcParams['figure.figsize']
+    default_width, default_height = plt.rcParams["figure.figsize"]
     plt.figure(figsize=(default_width + 2, default_height + 2))
 
     def rescale_plot(ax, scale=1.1):
@@ -49,8 +45,8 @@ def plot_triangulation(
     x_list = [p.x() for p in outer_points]
     ta_list = [0.0]
     for i in range(1, len(outer_points)):
-        dx = outer_points[i].x() - outer_points[i-1].x()
-        dy = outer_points[i].y() - outer_points[i-1].y()
+        dx = outer_points[i].x() - outer_points[i - 1].x()
+        dy = outer_points[i].y() - outer_points[i - 1].y()
         dist = math.sqrt(dx**2 + dy**2)
         ta_list.append(ta_list[-1] + dist)
     total_length = ta_list[-1]
@@ -185,7 +181,7 @@ def plot_triangulation(
         if thickness > max_thickness:
             max_thickness = thickness
             max_thickness_x = x
-    plt.axvline(max_thickness_x, linestyle='--', color='black', linewidth=1)
+    plt.axvline(max_thickness_x, linestyle="--", color="black", linewidth=1)
     # Find indices for ta and tr at this x
     idxs = [i for i in range(len(x_list)) if abs(x_list[i] - max_thickness_x) < 1e-3]
     ta_vals = [ta_list[i] for i in idxs]
@@ -194,12 +190,20 @@ def plot_triangulation(
     rescale_plot(plt.gca())
     _, ymax = plt.ylim()
     if len(ta_vals) == 2:
-        ta_str = f'{ta_vals[0]:.3f}, {ta_vals[1]:.3f}'
-        tr_str = f'{tr_vals[0]:.3f}, {tr_vals[1]:.3f}'
+        ta_str = f"{ta_vals[0]:.3f}, {ta_vals[1]:.3f}"
+        tr_str = f"{tr_vals[0]:.3f}, {tr_vals[1]:.3f}"
     else:
-        ta_str = f'{ta_vals[0]:.3f}' if ta_vals else 'N/A'
-        tr_str = f'{tr_vals[0]:.3f}' if tr_vals else 'N/A'
-    plt.text(max_thickness_x, ymax + 0.01, f'x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nthickness={max_thickness:.4f}', ha='center', va='bottom', fontsize=10, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        ta_str = f"{ta_vals[0]:.3f}" if ta_vals else "N/A"
+        tr_str = f"{tr_vals[0]:.3f}" if tr_vals else "N/A"
+    plt.text(
+        max_thickness_x,
+        ymax + 0.01,
+        f"x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nthickness={max_thickness:.4f}",
+        ha="center",
+        va="bottom",
+        fontsize=10,
+        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+    )
 
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_id))
