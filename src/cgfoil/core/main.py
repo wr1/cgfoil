@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from typing import Optional
+from typing import Dict, Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.core.mesh import create_line_mesh
@@ -13,7 +13,8 @@ from cgfoil.core.trim import (
     trim_line,
     trim_self_intersecting_curve,
 )
-from cgfoil.models import AirfoilMesh, MeshResult
+from cgfoil.models import Skin, Web, AirfoilMesh, MeshResult
+from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
 from cgfoil.utils.plot import plot_triangulation
@@ -63,7 +64,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
                 ply.material = name_to_id[ply.material]
             # else assume int
 
-    print(f"skins materials: {[s.material for s in sorted_skins]}")
+    logger.info(f"skins materials: {[s.material for s in sorted_skins]}")
 
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename, n_elem)
@@ -137,8 +138,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Skin material ids
     skin_material_ids = [s.material for s in sorted_skins]
 
-    print(f"skin_material_ids: {skin_material_ids}")
-    print(f"web_material_ids: {web_material_ids}")
+    logger.info(f"skin_material_ids: {skin_material_ids}")
+    logger.info(f"web_material_ids: {web_material_ids}")
 
     # Create constrained Delaunay triangulation
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
@@ -309,9 +310,7 @@ def run_cgfoil(mesh: AirfoilMesh):
             mesh_obj.cell_data["inplane"] = np.array(
                 [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
             )
-            plane_orientations = [
-                math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes
-            ]
+            plane_orientations = [math.degrees(math.atan2(iy, ix)) for ix, iy in mesh_result.face_inplanes]
             mesh_obj.cell_data["plane_orientations"] = plane_orientations
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")

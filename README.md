@@ -12,6 +12,11 @@ uv pip install .
 
 ## Usage
 
+### CLI help
+
+![Help](docs/assets/help.svg)
+
+
 Generate mesh from YAML:
 
 ```bash
@@ -52,6 +57,11 @@ Options:
 ## Examples
 
 See the `examples/` directory for programmatic usage, including loading from YAML.
+
+
+## Example output
+Example output 
+![Example](docs/assets/example.png)
 
 ## Development
 

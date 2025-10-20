@@ -5,9 +5,11 @@ import yaml
 import json
 import sys
 import math
+import os
+from pathlib import Path
 import pandas as pd
 from treeparse import cli, command, argument, option, group
-from cgfoil.core.main import generate_mesh, plot_mesh
+from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
 from cgfoil.models import AirfoilMesh
 from cgfoil.utils.logger import logger
 
@@ -58,7 +60,11 @@ def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
     mesh_obj.cell_data["inplane"] = np.array(
         [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
     )
-    plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
+    plane_orientations = []
+    for ix, iy in mesh_result.face_inplanes:
+        angle = math.degrees(math.atan2(iy, ix))
+        angle = (angle + 90) % 180 - 90
+        plane_orientations.append(angle)
     mesh_obj.cell_data["plane_orientations"] = plane_orientations
     mesh_obj.save(vtk_file)
     logger.info(f"Mesh exported to {vtk_file}")
@@ -88,7 +94,11 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
         ]
     material_ids = mesh_result.face_material_ids
     fiber_orientations = [0.0] * len(cells)
-    plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
+    plane_orientations = []
+    for ix, iy in mesh_result.face_inplanes:
+        angle = math.degrees(math.atan2(iy, ix))
+        angle = (angle + 90) % 180 - 90
+        plane_orientations.append(angle)
     scaling_constraint = 1.0
     singular = False
     data = {
@@ -121,30 +131,51 @@ def summarize_mesh(mesh_file: str, output: str = None):
             total_mass += mass
         else:
             name = "N/A"
-            mass = float("nan")
-        rows.append(
-            {
-                "Material ID": mat_id,
-                "Material Name": name,
-                "Area": area,
-                "Mass/m": mass,
-            }
-        )
+            mass = float('nan')
+        rows.append({
+            "Material ID": mat_id,
+            "Material Name": name,
+            "Area": area,
+            "Mass/m": mass,
+        })
     if mesh_result.materials:
-        rows.append(
-            {
-                "Material ID": "Total",
-                "Material Name": "",
-                "Area": "",
-                "Mass/m": total_mass,
-            }
-        )
+        rows.append({
+            "Material ID": "Total",
+            "Material Name": "",
+            "Area": "",
+            "Mass/m": total_mass,
+        })
     df = pd.DataFrame(rows)
     if output:
         df.to_csv(output, index=False)
         logger.info(f"Summary saved to {output}")
-    print(df.to_string())
+    logger.info(df.to_string())
 
+
+def full_mesh(yaml_file: str, output_dir: str):
+    """Run full meshing pipeline."""
+    os.makedirs(output_dir, exist_ok=True)
+    with open(yaml_file, "r") as f:
+        data = yaml.safe_load(f)
+    mesh = AirfoilMesh(**data)
+    mesh_result = generate_mesh(mesh)
+    # Save mesh
+    mesh_file = os.path.join(output_dir, "mesh.pck")
+    with open(mesh_file, "wb") as f:
+        pickle.dump(mesh_result, f)
+    logger.info(f"Mesh saved to {mesh_file}")
+    # Plot
+    plot_filename = os.path.join(output_dir, "plot.png")
+    plot_mesh(mesh_result, plot_filename, True)
+    # VTK
+    vtk_file = os.path.join(output_dir, "mesh.vtk")
+    export_mesh_to_vtk(mesh_file, vtk_file)
+    # ANBA
+    anba_file = os.path.join(output_dir, "mesh.json")
+    export_mesh_to_anba(mesh_file, anba_file)
+    # Summary
+    summary_file = os.path.join(output_dir, "summary.csv")
+    summarize_mesh(mesh_file, summary_file)
 
 app = cli(
     name="cgfoil",
@@ -242,6 +273,18 @@ summary_cmd = command(
     ],
 )
 export_group.commands.append(summary_cmd)
+
+full_cmd = command(
+    name="full",
+    help="Run full meshing pipeline.",
+    callback=full_mesh,
+    arguments=[
+        argument(name="yaml_file", arg_type=str, help="Path to YAML configuration file"),
+        argument(name="output_dir", arg_type=str, help="Output directory"),
+    ],
+    sort_key=4,
+)
+app.commands.append(full_cmd)
 
 
 def main():
