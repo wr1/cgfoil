@@ -1,7 +1,7 @@
 """Programmatic example for cgfoil."""
 
 import numpy as np
-from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
+from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh
 
 # Define custom skins (shell definitions)
@@ -12,7 +12,9 @@ skins = {
         sort_index=1,
     ),
     "cap": Skin(
-        thickness=lambda x: np.interp(x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]),
+        thickness=lambda x: np.interp(
+            x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]
+        ),
         material=1,
         sort_index=2,
     ),
@@ -26,9 +28,7 @@ skins = {
         sort_index=3,
     ),
     "te_ud": Skin(
-        thickness=lambda x: np.interp(
-            x, [0.7, 0.75, 0.8, 0.85], [0, 0.01, 0.01, 0]
-        ),
+        thickness=lambda x: np.interp(x, [0.7, 0.75, 0.8, 0.85], [0, 0.01, 0.01, 0]),
         material=4,
         sort_index=4,
     ),
