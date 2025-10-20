@@ -81,11 +81,14 @@ def test_export_anba_fields(mesh_result_fixture):
     assert len(data["points"]) == len(mesh_result.vertices)
 
 
-def test_export_summary(mesh_result_fixture, capsys):
+def test_export_summary(mesh_result_fixture):
     tmpdir, mesh_result = mesh_result_fixture
-    summarize_mesh(os.path.join(tmpdir, "mesh.pck"))
-    captured = capsys.readouterr()
-    assert "Total" in captured.out
+    summary_file = os.path.join(tmpdir, "summary.csv")
+    summarize_mesh(os.path.join(tmpdir, "mesh.pck"), output=summary_file)
+    assert os.path.exists(summary_file)
+    with open(summary_file) as f:
+        content = f.read()
+    assert "Total" in content
 
 
 def test_plot_triangulation_to_file(tmp_path):
