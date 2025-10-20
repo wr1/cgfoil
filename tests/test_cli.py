@@ -3,7 +3,9 @@
 import subprocess
 import os
 import tempfile
+import shutil
 from pathlib import Path
+import yaml
 
 
 def test_cli_help():
@@ -25,8 +27,20 @@ def test_cli_mesh_help():
 
 def test_cli_full():
     with tempfile.TemporaryDirectory() as tmpdir:
-        yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-        result = subprocess.run(["cgfoil", "full", str(yaml_file), tmpdir], capture_output=True, text=True)
+        # Copy and modify yaml
+        yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
+        yaml_dst = Path(tmpdir) / "airfoil_mesh.yaml"
+        shutil.copy(yaml_src, yaml_dst)
+        with open(yaml_dst, 'r') as f:
+            data = yaml.safe_load(f)
+        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        with open(yaml_dst, 'w') as f:
+            yaml.dump(data, f)
+        # Copy naca
+        naca_src = Path(__file__).parent / "naca0018.dat"
+        naca_dst = Path(tmpdir) / "naca0018.dat"
+        shutil.copy(naca_src, naca_dst)
+        result = subprocess.run(["cgfoil", "full", str(yaml_dst), tmpdir], capture_output=True, text=True)
         assert result.returncode == 0
         assert os.path.exists(os.path.join(tmpdir, "mesh.pck"))
         assert os.path.exists(os.path.join(tmpdir, "plot.png"))
