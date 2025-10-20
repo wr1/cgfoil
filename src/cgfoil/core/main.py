@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from typing import Dict, Optional
+from typing import Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.core.mesh import create_line_mesh
@@ -13,8 +13,7 @@ from cgfoil.core.trim import (
     trim_line,
     trim_self_intersecting_curve,
 )
-from cgfoil.models import Skin, Web, AirfoilMesh, MeshResult
-from cgfoil.utils.geometry import point_in_polygon
+from cgfoil.models import AirfoilMesh, MeshResult
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
 from cgfoil.utils.plot import plot_triangulation
@@ -310,7 +309,9 @@ def run_cgfoil(mesh: AirfoilMesh):
             mesh_obj.cell_data["inplane"] = np.array(
                 [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
             )
-            plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
+            plane_orientations = [
+                math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes
+            ]
             mesh_obj.cell_data["plane_orientations"] = plane_orientations
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
