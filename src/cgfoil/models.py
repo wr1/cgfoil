@@ -55,7 +55,7 @@ class Thickness(BaseModel):
 class Ply(BaseModel):
     """Model for a ply in a web."""
     thickness: Union[float, Callable[[float], float]]
-    material: int
+    material: Union[int, str]
 
 
 class Web(BaseModel):
@@ -69,7 +69,7 @@ class Web(BaseModel):
 class Skin(BaseModel):
     """Model for a skin layer."""
     thickness: Thickness
-    material: int
+    material: Union[int, str]
     sort_index: int
 
 
@@ -83,20 +83,22 @@ class AirfoilMesh(BaseModel):
     vtk: Optional[str] = None
     split_view: bool = False
     plot_filename: Optional[str] = None
+    materials: Optional[List[Dict[str, Any]]] = None
 
 
 class MeshResult(BaseModel):
     """Model for mesh generation results."""
     vertices: List[List[float]]
     faces: List[List[int]]
-    outer_points: List[List[float]]
-    inner_list: List[List[List[float]]]
-    line_ply_list: List[List[List[float]]]
-    untrimmed_lines: List[List[List[float]]]
+    outer_points: List[Tuple[float, float]]
+    inner_list: List[List[Tuple[float, float]]]
+    line_ply_list: List[List[Tuple[float, float]]]
+    untrimmed_lines: List[List[Tuple[float, float]]]
     ply_ids: List[int]
-    airfoil_ids: List[int]
+    layer_material_ids: List[int]
     web_names: List[str]
     face_normals: List[Tuple[float, float]]
     face_material_ids: List[int]
     face_inplanes: List[Tuple[float, float]]
     areas: Dict[int, float]
+    materials: Optional[List[Dict[str, Any]]] = None

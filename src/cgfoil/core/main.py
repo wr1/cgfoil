@@ -26,6 +26,45 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     web_definition = mesh.webs
     airfoil_filename = mesh.airfoil_filename
     n_elem = mesh.n_elem
+    materials = mesh.materials or []
+
+    # Collect used material names for db check
+    used_names = set()
+    for s in skins.values():
+        if isinstance(s.material, str):
+            used_names.add(s.material)
+    for web in web_definition.values():
+        for ply in web.plies:
+            if isinstance(ply.material, str):
+                used_names.add(ply.material)
+
+    # If materials db is defined, check all used are present
+    if materials:
+        name_to_id = {mat["name"]: idx for idx, mat in enumerate(materials)}
+        missing = []
+        for name in used_names:
+            if name not in name_to_id:
+                missing.append(f"'{name}'")
+        if missing:
+            raise ValueError(
+                f"The following materials are not defined in the materials database: {', '.join(missing)}"
+            )
+    else:
+        name_to_id = {}
+
+    # Assign unique material IDs
+    sorted_skins = sorted(skins.values(), key=lambda s: s.sort_index)
+    for s in sorted_skins:
+        if isinstance(s.material, str):
+            s.material = name_to_id[s.material]
+        # else assume int
+    for web in web_definition.values():
+        for ply in web.plies:
+            if isinstance(ply.material, str):
+                ply.material = name_to_id[ply.material]
+            # else assume int
+
+    print(f"skins materials: {[s.material for s in sorted_skins]}")
 
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename, n_elem)
@@ -34,34 +73,14 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     x = [p.x() for p in outer_points]
     ta = [0.0]
     for i in range(1, len(outer_points)):
-        dx = outer_points[i].x() - outer_points[i-1].x()
-        dy = outer_points[i].y() - outer_points[i-1].y()
+        dx = outer_points[i].x() - outer_points[i - 1].x()
+        dy = outer_points[i].y() - outer_points[i - 1].y()
         dist = math.sqrt(dx**2 + dy**2)
         ta.append(ta[-1] + dist)
     total_length = ta[-1]
     tr = [t / total_length for t in ta]
 
-    # Compute normals for outer points (outward)
-    n = len(outer_points)
-    outer_normals = []
-    outer_tangents = []
-    for i in range(n):
-        prev = outer_points[(i - 1) % n]
-        curr = outer_points[i]
-        next_p = outer_points[(i + 1) % n]
-        tx = (next_p.x() - prev.x()) / 2
-        ty = (next_p.y() - prev.y()) / 2
-        t_len = math.sqrt(tx**2 + ty**2)
-        if t_len > 0:
-            tx /= t_len
-            ty /= t_len
-        nx = -ty
-        ny = tx
-        outer_normals.append((nx, ny))
-        outer_tangents.append((tx, ty))
-
     # Ply thicknesses for airfoil
-    sorted_skins = sorted(skins.values(), key=lambda s: s.sort_index)
     ply_thicknesses = []
     for s in sorted_skins:
         thickness_result = s.thickness.compute(x, ta, tr)
@@ -116,8 +135,11 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
-    # Airfoil material ids
-    airfoil_ids = [0] + [s.material for s in sorted_skins]
+    # Layer material ids
+    layer_material_ids = [s.material for s in sorted_skins]
+
+    print(f"layer_material_ids: {layer_material_ids}")
+    print(f"ply_ids: {ply_ids}")
 
     # Create constrained Delaunay triangulation
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
@@ -139,6 +161,25 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     for ply_points in line_ply_list:
         for i in range(len(ply_points)):
             cdt.insert_constraint(ply_points[i], ply_points[(i + 1) % len(ply_points)])
+
+    # Compute normals for outer points (outward)
+    n = len(outer_points)
+    outer_normals = []
+    outer_tangents = []
+    for i in range(n):
+        prev = outer_points[(i - 1) % n]
+        curr = outer_points[i]
+        next_p = outer_points[(i + 1) % n]
+        tx = (next_p.x() - prev.x()) / 2
+        ty = (next_p.y() - prev.y()) / 2
+        t_len = math.sqrt(tx**2 + ty**2)
+        if t_len > 0:
+            tx /= t_len
+            ty /= t_len
+        nx = -ty
+        ny = tx
+        outer_normals.append((nx, ny))
+        outer_tangents.append((tx, ty))
 
     # Collect vertices and faces
     vertices = []
@@ -164,7 +205,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         inner_list,
         line_ply_list,
         ply_ids,
-        airfoil_ids,
+        layer_material_ids,
         outer_normals,
         ply_normals,
         outer_tangents,
@@ -192,10 +233,10 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     areas = compute_cross_sectional_areas(cdt, face_material_ids)
 
     # Convert to serializable lists
-    outer_points_list = [[p.x(), p.y()] for p in outer_points]
-    inner_list_list = [[[p.x(), p.y()] for p in inner] for inner in inner_list]
-    line_ply_list_list = [[[p.x(), p.y()] for p in ply] for ply in line_ply_list]
-    untrimmed_lines_list = [[[p.x(), p.y()] for p in line] for line in untrimmed_lines]
+    outer_points_list = [(p.x(), p.y()) for p in outer_points]
+    inner_list_list = [[(p.x(), p.y()) for p in inner] for inner in inner_list]
+    line_ply_list_list = [[(p.x(), p.y()) for p in ply] for ply in line_ply_list]
+    untrimmed_lines_list = [[(p.x(), p.y()) for p in line] for line in untrimmed_lines]
 
     return MeshResult(
         vertices=vertices,
@@ -205,22 +246,30 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         line_ply_list=line_ply_list_list,
         untrimmed_lines=untrimmed_lines_list,
         ply_ids=ply_ids,
-        airfoil_ids=airfoil_ids,
+        layer_material_ids=layer_material_ids,
         web_names=web_names,
         face_normals=filtered_face_normals,
         face_material_ids=filtered_face_material_ids,
         face_inplanes=filtered_face_inplanes,
         areas=areas,
+        materials=materials,
     )
 
 
-def plot_mesh(mesh_result: MeshResult, plot_filename: Optional[str] = None, split_view: bool = False):
+def plot_mesh(
+    mesh_result: MeshResult,
+    plot_filename: Optional[str] = None,
+    split_view: bool = False,
+):
     # Convert back to Point_2 for plotting
     from CGAL.CGAL_Kernel import Point_2
+
     outer_points = [Point_2(*p) for p in mesh_result.outer_points]
     inner_list = [[Point_2(*p) for p in inner] for inner in mesh_result.inner_list]
     line_ply_list = [[Point_2(*p) for p in ply] for ply in mesh_result.line_ply_list]
-    untrimmed_lines = [[Point_2(*p) for p in line] for line in mesh_result.untrimmed_lines]
+    untrimmed_lines = [
+        [Point_2(*p) for p in line] for line in mesh_result.untrimmed_lines
+    ]
     plot_triangulation(
         mesh_result.vertices,
         mesh_result.faces,
@@ -229,7 +278,7 @@ def plot_mesh(mesh_result: MeshResult, plot_filename: Optional[str] = None, spli
         line_ply_list,
         untrimmed_lines,
         mesh_result.ply_ids,
-        mesh_result.airfoil_ids,
+        mesh_result.layer_material_ids,
         mesh_result.web_names,
         mesh_result.face_normals,
         mesh_result.face_material_ids,
@@ -250,11 +299,17 @@ def run_cgfoil(mesh: AirfoilMesh):
             logger.warning("pyvista not available, cannot save VTK")
         else:
             mesh_obj = pv.UnstructuredGrid(
-                mesh_result.faces, [pv.CellType.TRIANGLE] * len(mesh_result.faces), mesh_result.vertices
+                mesh_result.faces,
+                [pv.CellType.TRIANGLE] * len(mesh_result.faces),
+                mesh_result.vertices,
             )
             mesh_obj.cell_data["material_id"] = mesh_result.face_material_ids
-            mesh_obj.cell_data["normals"] = np.array([[n[0], n[1], 0.0] for n in mesh_result.face_normals])
-            mesh_obj.cell_data["inplane"] = np.array([[i[0], i[1], 0.0] for i in mesh_result.face_inplanes])
+            mesh_obj.cell_data["normals"] = np.array(
+                [[n[0], n[1], 0.0] for n in mesh_result.face_normals]
+            )
+            mesh_obj.cell_data["inplane"] = np.array(
+                [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
+            )
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
 
@@ -264,4 +319,4 @@ def run_cgfoil(mesh: AirfoilMesh):
     logger.info(f"Number of vertices: {len(mesh_result.vertices)}")
     logger.info(f"Number of faces: {len(mesh_result.faces)}")
     logger.info(f"Web Material ids: {mesh_result.ply_ids}")
-    logger.info(f"Airfoil Material ids: {mesh_result.airfoil_ids}")
+    logger.info(f"Layer Material ids: {mesh_result.layer_material_ids}")

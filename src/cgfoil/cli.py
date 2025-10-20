@@ -3,10 +3,12 @@
 import pickle
 import yaml
 import json
+import sys
 from pathlib import Path
 from treeparse import cli, command, argument, option, group
 from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
 from cgfoil.models import AirfoilMesh
+from cgfoil.utils.logger import logger
 
 
 def mesh_from_yaml(yaml_file: str, output_mesh: str = None):
@@ -14,10 +16,15 @@ def mesh_from_yaml(yaml_file: str, output_mesh: str = None):
     with open(yaml_file, "r") as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
-    mesh_result = generate_mesh(mesh)
+    try:
+        mesh_result = generate_mesh(mesh)
+    except ValueError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
     if output_mesh:
         with open(output_mesh, "wb") as f:
             pickle.dump(mesh_result, f)
+        logger.info(f"Mesh saved to {output_mesh}")
     return mesh_result
 
 
@@ -51,7 +58,7 @@ def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
         [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
     )
     mesh_obj.save(vtk_file)
-    print(f"Mesh exported to {vtk_file}")
+    logger.info(f"Mesh exported to {vtk_file}")
 
 
 def export_mesh_to_anba(mesh_file: str, anba_file: str):
@@ -62,17 +69,20 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     points = mesh_result.vertices
     cells = [face[1:] for face in mesh_result.faces]  # Remove the 3
     degree = 2
-    unique_materials = sorted(set(mesh_result.face_material_ids))
-    max_id = max(unique_materials) if unique_materials else 0
-    mat_library = [
-        {
-            "type": "isotropic",
-            "E": 98000000.0,
-            "nu": 0.3,
-            "rho": 7850.0,
-        }
-        for _ in range(max_id + 1)
-    ]
+    if mesh_result.materials:
+        mat_library = mesh_result.materials
+    else:
+        unique_materials = sorted(set(mesh_result.face_material_ids))
+        max_id = max(unique_materials) if unique_materials else 0
+        mat_library = [
+            {
+                "type": "isotropic",
+                "E": 98000000.0,
+                "nu": 0.3,
+                "rho": 7850.0,
+            }
+            for _ in range(max_id + 1)
+        ]
     material_ids = mesh_result.face_material_ids
     fiber_orientations = [0.0] * len(cells)
     plane_orientations = [0.0] * len(cells)
@@ -91,7 +101,7 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     }
     with open(anba_file, "w") as f:
         json.dump(data, f, indent=2)
-    print(f"Mesh exported to {anba_file}")
+    logger.info(f"Mesh exported to {anba_file}")
 
 
 def run_mesh(
@@ -125,7 +135,6 @@ def run_mesh(
         plot_filename=plot_file,
     )
     run_cgfoil(mesh)
-
 
 app = cli(
     name="cgfoil",

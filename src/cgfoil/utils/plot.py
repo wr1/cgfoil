@@ -17,7 +17,7 @@ def plot_triangulation(
     line_ply_list,
     untrimmed_lines,
     ply_ids,
-    airfoil_ids,
+    layer_material_ids,
     web_names,
     face_normals,
     face_material_ids,
@@ -42,7 +42,7 @@ def plot_triangulation(
         ax.set_ylim(ymid - yran * scale, ymid + yran * scale)
 
     cmap = plt.cm.viridis
-    all_ids = ply_ids + airfoil_ids
+    all_ids = ply_ids + layer_material_ids
     max_id = max(all_ids) if all_ids else 0
 
     # Compute ta and tr

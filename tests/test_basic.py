@@ -163,8 +163,23 @@ def test_plot_triangulation(mock_show):
     face_normals = [(0, 1)] * cdt.number_of_faces()
     face_material_ids = [0] * cdt.number_of_faces()
     face_inplanes = [(1, 0)] * cdt.number_of_faces()
+    # Compute vertices and faces
+    vertices = []
+    vertex_map = {}
+    idx = 0
+    for v in cdt.finite_vertices():
+        vertex_map[v] = idx
+        vertices.append([v.point().x(), v.point().y(), 0.0])
+        idx += 1
+    faces = []
+    for face in cdt.finite_faces():
+        v0 = vertex_map[face.vertex(0)]
+        v1 = vertex_map[face.vertex(1)]
+        v2 = vertex_map[face.vertex(2)]
+        faces.append([3, v0, v1, v2])
     plot_triangulation(
-        cdt,
+        vertices,
+        faces,
         outer_points,
         inner_list,
         line_ply_list,
