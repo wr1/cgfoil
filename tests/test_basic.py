@@ -115,8 +115,8 @@ def test_compute_face_normals():
     outer_points = [Point_2(0, 0), Point_2(1, 0), Point_2(0.5, 1)]
     inner_list = []
     line_ply_list = []
-    ply_ids = []
-    airfoil_ids = [0]
+    web_material_ids = []
+    skin_material_ids = [0]
     outer_normals = [(0, 1), (0, 1), (0, 1)]
     ply_normals = []
     outer_tangents = [(1, 0), (-0.5, 0.5), (-0.5, -0.5)]
@@ -125,8 +125,8 @@ def test_compute_face_normals():
         outer_points,
         inner_list,
         line_ply_list,
-        ply_ids,
-        airfoil_ids,
+        web_material_ids,
+        skin_material_ids,
         outer_normals,
         ply_normals,
         outer_tangents,
@@ -157,8 +157,8 @@ def test_plot_triangulation(mock_show):
     inner_list = []
     line_ply_list = []
     untrimmed_lines = []
-    ply_ids = []
-    airfoil_ids = [0]
+    web_material_ids = []
+    skin_material_ids = [0]
     web_names = []
     face_normals = [(0, 1)] * cdt.number_of_faces()
     face_material_ids = [0] * cdt.number_of_faces()
@@ -184,8 +184,8 @@ def test_plot_triangulation(mock_show):
         inner_list,
         line_ply_list,
         untrimmed_lines,
-        ply_ids,
-        airfoil_ids,
+        web_material_ids,
+        skin_material_ids,
         web_names,
         face_normals,
         face_material_ids,

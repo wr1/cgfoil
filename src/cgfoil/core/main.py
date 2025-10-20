@@ -103,7 +103,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
 
     # Create line plies for each web
     line_ply_list = []
-    ply_ids = []
+    web_material_ids = []
     ply_normals = []
     untrimmed_lines = []
     web_names = list(web_definition.keys())
@@ -130,16 +130,16 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
-            ply_ids.append(ply.material)
+            web_material_ids.append(ply.material)
             ply_normals.append(normal_ref if normal_ref else [0, 0])
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
-    # Layer material ids
-    layer_material_ids = [s.material for s in sorted_skins]
+    # Skin material ids
+    skin_material_ids = [s.material for s in sorted_skins]
 
-    print(f"layer_material_ids: {layer_material_ids}")
-    print(f"ply_ids: {ply_ids}")
+    print(f"skin_material_ids: {skin_material_ids}")
+    print(f"web_material_ids: {web_material_ids}")
 
     # Create constrained Delaunay triangulation
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
@@ -204,8 +204,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         outer_points,
         inner_list,
         line_ply_list,
-        ply_ids,
-        layer_material_ids,
+        web_material_ids,
+        skin_material_ids,
         outer_normals,
         ply_normals,
         outer_tangents,
@@ -245,8 +245,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         inner_list=inner_list_list,
         line_ply_list=line_ply_list_list,
         untrimmed_lines=untrimmed_lines_list,
-        ply_ids=ply_ids,
-        layer_material_ids=layer_material_ids,
+        web_material_ids=web_material_ids,
+        skin_material_ids=skin_material_ids,
         web_names=web_names,
         face_normals=filtered_face_normals,
         face_material_ids=filtered_face_material_ids,
@@ -277,8 +277,8 @@ def plot_mesh(
         inner_list,
         line_ply_list,
         untrimmed_lines,
-        mesh_result.ply_ids,
-        mesh_result.layer_material_ids,
+        mesh_result.web_material_ids,
+        mesh_result.skin_material_ids,
         mesh_result.web_names,
         mesh_result.face_normals,
         mesh_result.face_material_ids,
@@ -310,6 +310,8 @@ def run_cgfoil(mesh: AirfoilMesh):
             mesh_obj.cell_data["inplane"] = np.array(
                 [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
             )
+            plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
+            mesh_obj.cell_data["plane_orientations"] = plane_orientations
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
 
@@ -318,5 +320,5 @@ def run_cgfoil(mesh: AirfoilMesh):
 
     logger.info(f"Number of vertices: {len(mesh_result.vertices)}")
     logger.info(f"Number of faces: {len(mesh_result.faces)}")
-    logger.info(f"Web Material ids: {mesh_result.ply_ids}")
-    logger.info(f"Layer Material ids: {mesh_result.layer_material_ids}")
+    logger.info(f"Web Material ids: {mesh_result.web_material_ids}")
+    logger.info(f"Skin Material ids: {mesh_result.skin_material_ids}")

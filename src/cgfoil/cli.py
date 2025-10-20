@@ -4,7 +4,9 @@ import pickle
 import yaml
 import json
 import sys
+import math
 from pathlib import Path
+import pandas as pd
 from treeparse import cli, command, argument, option, group
 from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
 from cgfoil.models import AirfoilMesh
@@ -57,6 +59,8 @@ def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
     mesh_obj.cell_data["inplane"] = np.array(
         [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
     )
+    plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
+    mesh_obj.cell_data["plane_orientations"] = plane_orientations
     mesh_obj.save(vtk_file)
     logger.info(f"Mesh exported to {vtk_file}")
 
@@ -85,7 +89,7 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
         ]
     material_ids = mesh_result.face_material_ids
     fiber_orientations = [0.0] * len(cells)
-    plane_orientations = [0.0] * len(cells)
+    plane_orientations = [math.atan2(iy, ix) for ix, iy in mesh_result.face_inplanes]
     scaling_constraint = 1.0
     singular = False
     data = {
@@ -104,37 +108,39 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     logger.info(f"Mesh exported to {anba_file}")
 
 
-def run_mesh(
-    plot: bool = False,
-    vtk: str = None,
-    file: str = "naca0018.dat",
-    split: bool = False,
-    plot_file: str = None,
-):
-    # Default skins
-    skins = {
-        "outer_skin": {
-            "thickness": {"type": "constant", "value": 0.005},
-            "material": 2,
-            "sort_index": 1,
-        },
-        "inner_skin": {
-            "thickness": {"type": "constant", "value": 0.005},
-            "material": 2,
-            "sort_index": 2,
-        },
-    }
-    webs = {}
-    mesh = AirfoilMesh(
-        skins=skins,
-        webs=webs,
-        airfoil_filename=file,
-        plot=plot,
-        vtk=vtk,
-        split_view=split,
-        plot_filename=plot_file,
-    )
-    run_cgfoil(mesh)
+def summarize_mesh(mesh_file: str, output: str = None):
+    """Summarize areas and masses from mesh file."""
+    with open(mesh_file, "rb") as f:
+        mesh_result = pickle.load(f)
+    rows = []
+    total_mass = 0.0
+    for mat_id, area in sorted(mesh_result.areas.items()):
+        if mesh_result.materials and mat_id < len(mesh_result.materials):
+            name = mesh_result.materials[mat_id].get("name", "N/A")
+            rho = mesh_result.materials[mat_id]["rho"]
+            mass = area * rho
+            total_mass += mass
+        else:
+            name = "N/A"
+            mass = float('nan')
+        rows.append({
+            "Material ID": mat_id,
+            "Material Name": name,
+            "Area": area,
+            "Mass/m": mass,
+        })
+    if mesh_result.materials:
+        rows.append({
+            "Material ID": "Total",
+            "Material Name": "",
+            "Area": "",
+            "Mass/m": total_mass,
+        })
+    df = pd.DataFrame(rows)
+    if output:
+        df.to_csv(output, index=False)
+        logger.info(f"Summary saved to {output}")
+    print(df.to_string())
 
 app = cli(
     name="cgfoil",
@@ -162,6 +168,7 @@ mesh_cmd = command(
             help="Output mesh file (pickle)",
         ),
     ],
+    sort_key=1,
 )
 app.commands.append(mesh_cmd)
 
@@ -174,7 +181,7 @@ plot_cmd = command(
     ],
     options=[
         option(
-            flags=["--plot-file"],
+            flags=["--plot-file", "-f"],
             dest="plot_filename",
             arg_type=str,
             help="Save plot to file",
@@ -186,10 +193,11 @@ plot_cmd = command(
             help="Enable split view plotting",
         ),
     ],
+    sort_key=2,
 )
 app.commands.append(plot_cmd)
 
-export_group = group(name="export", help="Export mesh to various formats.")
+export_group = group(name="export", help="Export mesh to various formats.", sort_key=3)
 app.subgroups.append(export_group)
 
 vtk_cmd = command(
@@ -214,42 +222,22 @@ anba_cmd = command(
 )
 export_group.commands.append(anba_cmd)
 
-run_cmd = command(
-    name="run",
-    help="Run meshing with defaults.",
-    callback=run_mesh,
+summary_cmd = command(
+    name="summary",
+    help="Summarize areas and masses from mesh file.",
+    callback=summarize_mesh,
+    arguments=[
+        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+    ],
     options=[
         option(
-            flags=["--plot", "-p"],
-            arg_type=bool,
-            default=False,
-            help="Plot the triangulation",
-        ),
-        option(
-            flags=["--vtk", "-v"],
+            flags=["--output", "-o"],
             arg_type=str,
-            help="Output VTK file",
-        ),
-        option(
-            flags=["--file", "-f"],
-            arg_type=str,
-            default="naca0018.dat",
-            help="Path to airfoil data file (.dat)",
-        ),
-        option(
-            flags=["--split", "-s"],
-            arg_type=bool,
-            default=False,
-            help="Enable split view plotting",
-        ),
-        option(
-            flags=["--plot-file"],
-            arg_type=str,
-            help="Save plot to file",
+            help="Output CSV file",
         ),
     ],
 )
-app.commands.append(run_cmd)
+export_group.commands.append(summary_cmd)
 
 
 def main():

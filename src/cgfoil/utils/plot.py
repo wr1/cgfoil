@@ -16,8 +16,8 @@ def plot_triangulation(
     inner_list,
     line_ply_list,
     untrimmed_lines,
-    ply_ids,
-    layer_material_ids,
+    web_material_ids,
+    skin_material_ids,
     web_names,
     face_normals,
     face_material_ids,
@@ -42,7 +42,7 @@ def plot_triangulation(
         ax.set_ylim(ymid - yran * scale, ymid + yran * scale)
 
     cmap = plt.cm.viridis
-    all_ids = ply_ids + layer_material_ids
+    all_ids = web_material_ids + skin_material_ids
     max_id = max(all_ids) if all_ids else 0
 
     # Compute ta and tr
@@ -85,7 +85,7 @@ def plot_triangulation(
             if max_id == 0:
                 color = cmap(0)
             else:
-                color = cmap(ply_ids[idx] / max_id)
+                color = cmap(web_material_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
         # Plot untrimmed lines at +offset_y
@@ -163,11 +163,11 @@ def plot_triangulation(
 
         for idx, ply_points in enumerate(line_ply_list):
             xs = [p.x() for p in ply_points] + [ply_points[0].x()]
-            ys = [p.y() for p in ply_points] + [ply_points[0].y()]
+            ys = [p.y() + offset_y for p in ply_points] + [ply_points[0].y() + offset_y]
             if max_id == 0:
                 color = cmap(0)
             else:
-                color = cmap(ply_ids[idx] / max_id)
+                color = cmap(web_material_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
     # Add dashed axvline at position of maximum thickness

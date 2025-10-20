@@ -3,7 +3,7 @@
 from cgfoil.utils.geometry import point_in_polygon
 
 
-def get_material_id(centroid, outer_points, inner_list, line_ply_list, ply_ids, layer_material_ids):
+def get_material_id(centroid, outer_points, inner_list, line_ply_list, web_material_ids, skin_material_ids):
     """Determine the material ID for a given centroid."""
     in_hole = len(inner_list) > 0 and point_in_polygon(centroid, inner_list[-1])
     material_id = -1
@@ -11,23 +11,23 @@ def get_material_id(centroid, outer_points, inner_list, line_ply_list, ply_ids, 
         for i in range(len(inner_list) + 1):
             if i == 0:
                 if len(inner_list) == 0 or not point_in_polygon(centroid, inner_list[0]):
-                    material_id = layer_material_ids[i]
+                    material_id = skin_material_ids[i]
                     break
             elif i < len(inner_list):
                 if (
                     point_in_polygon(centroid, inner_list[i - 1])
                     and not point_in_polygon(centroid, inner_list[i])
                 ):
-                    material_id = layer_material_ids[i]
+                    material_id = skin_material_ids[i]
                     break
             else:
                 if point_in_polygon(centroid, inner_list[-1]):
-                    material_id = layer_material_ids[i]
+                    material_id = skin_material_ids[i]
                     break
     if material_id == -1:
         for idx_ply, ply in enumerate(line_ply_list):
             if point_in_polygon(centroid, ply):
-                material_id = ply_ids[idx_ply]
+                material_id = web_material_ids[idx_ply]
                 break
     return material_id
 
@@ -37,8 +37,8 @@ def compute_face_normals(
     outer_points,
     inner_list,
     line_ply_list,
-    ply_ids,
-    layer_material_ids,
+    web_material_ids,
+    skin_material_ids,
     outer_normals,
     ply_normals,
     outer_tangents,
@@ -55,10 +55,10 @@ def compute_face_normals(
         cx = (p0.x() + p1.x() + p2.x()) / 3.0
         cy = (p0.y() + p1.y() + p2.y()) / 3.0
         centroid = type(outer_points[0])(cx, cy)  # Assuming Point_2
-        material_id = get_material_id(centroid, outer_points, inner_list, line_ply_list, ply_ids, layer_material_ids)
+        material_id = get_material_id(centroid, outer_points, inner_list, line_ply_list, web_material_ids, skin_material_ids)
         normal_x, normal_y = 0, 0
         inplane_x, inplane_y = 0, 0
-        if material_id in layer_material_ids:
+        if material_id in skin_material_ids:
             # Find closest outer point by 2D distance
             closest_i = min(
                 range(n),
@@ -66,8 +66,8 @@ def compute_face_normals(
             )
             normal_x, normal_y = outer_normals[closest_i]
             inplane_x, inplane_y = outer_tangents[closest_i]
-        elif material_id in ply_ids:
-            idx = ply_ids.index(material_id)
+        elif material_id in web_material_ids:
+            idx = web_material_ids.index(material_id)
             normal_x, normal_y = ply_normals[idx]
             inplane_x, inplane_y = ply_normals[idx][1], -ply_normals[idx][0]
         face_normals.append((normal_x, normal_y))
