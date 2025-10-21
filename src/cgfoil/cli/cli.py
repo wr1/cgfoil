@@ -75,7 +75,7 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     with open(mesh_file, "rb") as f:
         mesh_result = pickle.load(f)
     # Create serializable data
-    points = mesh_result.vertices
+    points = [[p[0], p[1]] for p in mesh_result.vertices]  # Remove z
     cells = [face[1:] for face in mesh_result.faces]  # Remove the 3
     degree = 2
     if mesh_result.materials:
@@ -124,11 +124,13 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     scaling_constraint = 1.0
     singular = False
     data = {
-        "points": points,
-        "cells": cells,
+        "mesh": {
+            "points": points,
+            "cells": cells,
+        },
         "degree": degree,
         "matlibrary": matlibrary,
-        "material_ids": material_ids,
+        "materials": material_ids,
         "fiber_orientations": fiber_orientations,
         "plane_orientations": plane_orientations,
         "scaling_constraint": scaling_constraint,

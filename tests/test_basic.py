@@ -7,7 +7,7 @@ from pathlib import Path
 import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-from cgfoil.core.main import run_cgfoil
+from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
@@ -195,6 +195,28 @@ def test_plot_triangulation(mock_show):
         split_view=False,
         plot_filename=None,
     )
+    mock_show.assert_called_once()
+
+@patch('matplotlib.pyplot.show')
+def test_plot_mesh(mock_show):
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
+        f.write("1\n\n0.0 0.0\n1.0 0.1\n")
+        fname = f.name
+    thickness = Thickness(type='constant', value=0.01)
+    skins = {
+        "skin": Skin(thickness=thickness, material=1, sort_index=1)
+    }
+    web_definition = {}
+    mesh = AirfoilMesh(
+        skins=skins,
+        webs=web_definition,
+        airfoil_filename=fname,
+        plot=True,
+        plot_filename=None,
+        split_view=False
+    )
+    mesh_result = generate_mesh(mesh)
+    plot_mesh(mesh_result, None, False)
     mock_show.assert_called_once()
 
 @patch('matplotlib.pyplot.savefig')
