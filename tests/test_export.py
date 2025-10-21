@@ -11,7 +11,7 @@ from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.models import AirfoilMesh
 from cgfoil.core.main import generate_mesh
-from cgfoil.cli import export_mesh_to_vtk, export_mesh_to_anba, summarize_mesh
+from cgfoil.cli.cli import export_mesh_to_vtk, export_mesh_to_anba, summarize_mesh
 from cgfoil.utils.plot import plot_triangulation
 
 @pytest.fixture
@@ -68,7 +68,7 @@ def test_export_anba_fields(mesh_result_fixture):
     assert "points" in data
     assert "cells" in data
     assert "degree" in data
-    assert "mat_library" in data
+    assert "matlibrary" in data
     assert "material_ids" in data
     assert "fiber_orientations" in data
     assert "plane_orientations" in data

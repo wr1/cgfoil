@@ -79,14 +79,36 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
     cells = [face[1:] for face in mesh_result.faces]  # Remove the 3
     degree = 2
     if mesh_result.materials:
-        mat_library = mesh_result.materials
+        matlibrary = []
+        for mat in mesh_result.materials:
+            if mat["type"] == "orthotropic":
+                matlibrary.append({
+                    "type": "orthotropic",
+                    "e_xx": mat["e_xx"],
+                    "e_yy": mat["e_yy"],
+                    "e_zz": mat["e_zz"],
+                    "g_xy": mat["g_xy"],
+                    "g_xz": mat["g_xz"],
+                    "g_yz": mat["g_yz"],
+                    "nu_xy": mat["nu_xy"],
+                    "nu_zx": mat["nu_zx"],
+                    "nu_zy": mat["nu_zy"],
+                    "rho": mat["rho"],
+                })
+            elif mat["type"] == "isotropic":
+                matlibrary.append({
+                    "type": "isotropic",
+                    "e": mat["e"],
+                    "nu": mat["nu"],
+                    "rho": mat["rho"],
+                })
     else:
         unique_materials = sorted(set(mesh_result.face_material_ids))
         max_id = max(unique_materials) if unique_materials else 0
-        mat_library = [
+        matlibrary = [
             {
                 "type": "isotropic",
-                "E": 98000000.0,
+                "e": 98000000.0,
                 "nu": 0.3,
                 "rho": 7850.0,
             }
@@ -105,7 +127,7 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
         "points": points,
         "cells": cells,
         "degree": degree,
-        "mat_library": mat_library,
+        "matlibrary": matlibrary,
         "material_ids": material_ids,
         "fiber_orientations": fiber_orientations,
         "plane_orientations": plane_orientations,
@@ -131,20 +153,24 @@ def summarize_mesh(mesh_file: str, output: str = None):
             total_mass += mass
         else:
             name = "N/A"
-            mass = float('nan')
-        rows.append({
-            "Material ID": mat_id,
-            "Material Name": name,
-            "Area": area,
-            "Mass/m": mass,
-        })
+            mass = float("nan")
+        rows.append(
+            {
+                "Material ID": mat_id,
+                "Material Name": name,
+                "Area": area,
+                "Mass/m": mass,
+            }
+        )
     if mesh_result.materials:
-        rows.append({
-            "Material ID": "Total",
-            "Material Name": "",
-            "Area": "",
-            "Mass/m": total_mass,
-        })
+        rows.append(
+            {
+                "Material ID": "Total",
+                "Material Name": "",
+                "Area": "",
+                "Mass/m": total_mass,
+            }
+        )
     df = pd.DataFrame(rows)
     if output:
         df.to_csv(output, index=False)
@@ -176,6 +202,7 @@ def full_mesh(yaml_file: str, output_dir: str):
     # Summary
     summary_file = os.path.join(output_dir, "summary.csv")
     summarize_mesh(mesh_file, summary_file)
+
 
 app = cli(
     name="cgfoil",
@@ -240,7 +267,12 @@ vtk_cmd = command(
     help="Export mesh to VTK file.",
     callback=export_mesh_to_vtk,
     arguments=[
-        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+        argument(
+            name="mesh_file",
+            arg_type=str,
+            help="Path to mesh file (pickle)",
+            sort_key=-1,
+        ),
         argument(name="vtk_file", arg_type=str, help="Output VTK file"),
     ],
 )
@@ -251,7 +283,12 @@ anba_cmd = command(
     help="Export mesh to ANBA format (JSON).",
     callback=export_mesh_to_anba,
     arguments=[
-        argument(name="mesh_file", arg_type=str, help="Path to mesh file (pickle)"),
+        argument(
+            name="mesh_file",
+            arg_type=str,
+            help="Path to mesh file (pickle)",
+            sort_key=-1,
+        ),
         argument(name="anba_file", arg_type=str, help="Output ANBA file"),
     ],
 )
@@ -279,7 +316,12 @@ full_cmd = command(
     help="Run full meshing pipeline.",
     callback=full_mesh,
     arguments=[
-        argument(name="yaml_file", arg_type=str, help="Path to YAML configuration file"),
+        argument(
+            name="yaml_file",
+            arg_type=str,
+            help="Path to YAML configuration file",
+            sort_key=-1,
+        ),
         argument(name="output_dir", arg_type=str, help="Output directory"),
     ],
     sort_key=4,

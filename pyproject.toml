@@ -34,7 +34,7 @@ dependencies = [
     "scipy",
     "pandas",
 ]
-scripts = { "cgfoil" = "cgfoil.cli:main" }
+scripts = { "cgfoil" = "cgfoil.cli.cli:main" }
 
 [project.optional-dependencies]
 dev = ["pytest-cov"]
@@ -53,4 +53,4 @@ ignore = []
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
-addopts = "--cov=cgfoil"
+addopts = "--cov=cgfoil --cov-report=term-missing"
