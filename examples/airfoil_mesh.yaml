@@ -2,7 +2,7 @@ skins:
   outer_skin:
     thickness:
       type: interp
-      coord: x
+      coord: xr
       x: [0.0, 0.9, 1.0]
       y: [0.005, 0.005, 0.002]
     material: biax_glass_fiber
@@ -13,7 +13,7 @@ skins:
       value: 0.02
       else_value: 0.0
       conditions:
-        - coord: x
+        - coord: xr
           range: [0.15, 0.5]
         - coord: tr
           range: [0.0, 0.5]
@@ -25,7 +25,7 @@ skins:
       value: 0.015
       else_value: 0.0
       conditions:
-        - coord: x
+        - coord: xr
           range: [0.15, 0.5]
         - coord: tr
           range: [0.5, 1.0]
@@ -34,7 +34,7 @@ skins:
   core:
     thickness:
       type: interp
-      coord: x
+      coord: xr
       x: [0.05, 0.1, 0.15, 0.15001, 0.5, 0.5001, 0.7, 0.9]
       y: [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0]
     material: pvc_foam_120
@@ -42,7 +42,7 @@ skins:
   inner_skin:
     thickness:
       type: constant
-      coord: x
+      coord: xr
       value: 0.005
     material: biax_glass_fiber
     sort_index: 5
@@ -70,7 +70,7 @@ webs:
     normal_ref: [-1, 0]
     n_cell: 15
 airfoil_filename: naca0018.dat
-scale_factor: 1.5
+scale_factor: 2.5
 n_elem: 100
 plot: true
 vtk: output.vtk

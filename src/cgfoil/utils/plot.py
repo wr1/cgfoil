@@ -60,6 +60,11 @@ def plot_triangulation(
     total_length = ta_list[-1]
     tr_list = [t / total_length for t in ta_list]
 
+    # Compute xr
+    x_min = min(x_list)
+    x_max = max(x_list)
+    xr_list = [(xi - x_min) / (x_max - x_min) for xi in x_list]
+
     if split_view:
         # Compute max_y for offset
         all_points = outer_points[:]
@@ -194,16 +199,19 @@ def plot_triangulation(
     idxs = [i for i in range(len(x_list)) if abs(x_list[i] - max_thickness_x) < 1e-3]
     ta_vals = [ta_list[i] for i in idxs]
     tr_vals = [tr_list[i] for i in idxs]
+    xr_vals = [xr_list[i] for i in idxs]
     # Add text label
     rescale_plot(plt.gca())
     _, ymax = plt.ylim()
     if len(ta_vals) == 2:
         ta_str = f'{ta_vals[0]:.3f}, {ta_vals[1]:.3f}'
         tr_str = f'{tr_vals[0]:.3f}, {tr_vals[1]:.3f}'
+        xr_str = f'{xr_vals[0]:.3f}, {xr_vals[1]:.3f}'
     else:
         ta_str = f'{ta_vals[0]:.3f}' if ta_vals else 'N/A'
         tr_str = f'{tr_vals[0]:.3f}' if tr_vals else 'N/A'
-    plt.text(max_thickness_x, ymax + 0.01, f'x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nthickness={max_thickness:.4f}', ha='center', va='bottom', fontsize=10, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
+        xr_str = f'{xr_vals[0]:.3f}' if xr_vals else 'N/A'
+    plt.text(max_thickness_x, ymax + 0.01, f'x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nxr={xr_str}\nthickness={max_thickness:.4f}', ha='center', va='bottom', fontsize=10, bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8))
 
     # Add colorbar
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=0, vmax=max_id))
