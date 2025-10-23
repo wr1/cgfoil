@@ -16,12 +16,12 @@ class Thickness(BaseModel):
     conditions: Optional[List[Dict[str, Any]]] = None
     else_value: Optional[float] = 0.0
 
-    def compute(self, x: List[float], ta: List[float], tr: List[float]) -> List[float]:
+    def compute(self, x: List[float], ta: List[float], tr: List[float], xr: List[float]) -> List[float]:
         if self.type == "constant":
-            coord_vals = {"x": x, "ta": ta, "tr": tr}[self.coord]
+            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return [self.value] * len(coord_vals)
         elif self.type == "interp":
-            coord_vals = {"x": x, "ta": ta, "tr": tr}[self.coord]
+            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return np.interp(coord_vals, self.x, self.y).tolist()
         elif self.type == "condition":
             result = []
@@ -29,16 +29,15 @@ class Thickness(BaseModel):
                 satisfied = True
                 if self.conditions:
                     for cond in self.conditions:
-                        coord = cond["coord"]
+                        coord = {"x": x, "ta": ta, "tr": tr, "xr": xr}[cond["coord"]][i]
                         min_v, max_v = cond["range"]
-                        val = {"x": x, "ta": ta, "tr": tr}[coord][i]
-                        if not (min_v <= val <= max_v):
+                        if not (min_v <= coord <= max_v):
                             satisfied = False
                             break
                 result.append(self.value if satisfied else self.else_value)
             return result
         elif self.type == "conditions":
-            coord_vals = {"x": x, "ta": ta, "tr": tr}[self.coord]
+            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             result = []
             for i, ci in enumerate(coord_vals):
                 val = self.else_value
@@ -93,6 +92,7 @@ class AirfoilMesh(BaseModel):
     split_view: bool = False
     plot_filename: Optional[str] = None
     materials: Optional[List[Dict[str, Any]]] = None
+    scale_factor: float = 1.0
 
 
 class MeshResult(BaseModel):

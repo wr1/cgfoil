@@ -27,6 +27,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     airfoil_filename = mesh.airfoil_filename
     n_elem = mesh.n_elem
     materials = mesh.materials or []
+    scale_factor = mesh.scale_factor
 
     # Collect used material names for db check
     used_names = set()
@@ -69,6 +70,14 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Load airfoil points (outer)
     outer_points = load_airfoil(airfoil_filename, n_elem)
 
+    # Apply scale factor to airfoil points
+    if scale_factor != 1.0:
+        outer_points = [Point_2(p.x() * scale_factor, p.y() * scale_factor) for p in outer_points]
+
+    # Apply scale factor to web points
+    for web in web_definition.values():
+        web.points = tuple((p[0] * scale_factor, p[1] * scale_factor) for p in web.points)
+
     # Compute coordinates: x, ta (absolute arc length), tr (relative arc length)
     x = [p.x() for p in outer_points]
     ta = [0.0]
@@ -80,10 +89,15 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     total_length = ta[-1]
     tr = [t / total_length for t in ta]
 
+    # Compute xr: relative x-coordinate from 0 to 1
+    x_min = min(x)
+    x_max = max(x)
+    xr = [(xi - x_min) / (x_max - x_min) for xi in x]
+
     # Ply thicknesses for airfoil
     ply_thicknesses = []
     for s in sorted_skins:
-        thickness_result = s.thickness.compute(x, ta, tr)
+        thickness_result = s.thickness.compute(x, ta, tr, xr)
         ply_thicknesses.append(thickness_result)
     inner_list = []
     current = outer_points

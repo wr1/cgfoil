@@ -2,38 +2,56 @@
 
 import numpy as np
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh
+from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
 # Define custom skins (shell definitions)
 skins = {
     "outer_skin": Skin(
-        thickness=lambda x: np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
+        thickness=Thickness(
+            type="interp",
+            coord="x",
+            x=[0.0, 0.9, 1.0],
+            y=[0.005, 0.005, 0.002],
+        ),
         material=2,
         sort_index=1,
     ),
     "cap": Skin(
-        thickness=lambda x: np.interp(
-            x, [0.2, 0.2001, 0.5, 0.5001], [0, 0.02, 0.02, 0]
+        thickness=Thickness(
+            type="interp",
+            coord="x",
+            x=[0.2, 0.2001, 0.5, 0.5001],
+            y=[0, 0.02, 0.02, 0],
         ),
         material=1,
         sort_index=2,
     ),
     "core": Skin(
-        thickness=lambda x: np.interp(
-            x,
-            [0.05, 0.1, 0.2, 0.20001, 0.5, 0.5001, 0.7, 0.9],
-            [0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0],
+        thickness=Thickness(
+            type="interp",
+            coord="x",
+            x=[0.05, 0.1, 0.2, 0.20001, 0.5, 0.5001, 0.7, 0.9],
+            y=[0, 0.01, 0.01, 0, 0, 0.02, 0.02, 0],
         ),
         material=3,
         sort_index=3,
     ),
     "te_ud": Skin(
-        thickness=lambda x: np.interp(x, [0.7, 0.75, 0.8, 0.85], [0, 0.01, 0.01, 0]),
+        thickness=Thickness(
+            type="interp",
+            coord="x",
+            x=[0.7, 0.75, 0.8, 0.85],
+            y=[0, 0.01, 0.01, 0],
+        ),
         material=4,
         sort_index=4,
     ),
     "inner_skin": Skin(
-        thickness=lambda x: np.interp(x, [0.0, 0.9, 1], [0.005, 0.005, 0.002]),
+        thickness=Thickness(
+            type="constant",
+            coord="x",
+            value=0.005,
+        ),
         material=2,
         sort_index=5,
     ),
@@ -93,6 +111,7 @@ mesh = AirfoilMesh(
     airfoil_filename="naca0018.dat",
     plot=True,
     vtk="output.vtk",
+    scale_factor=1.05,
 )
 
 # Run the meshing

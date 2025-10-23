@@ -70,6 +70,7 @@ webs:
     normal_ref: [-1, 0]
     n_cell: 15
 airfoil_filename: naca0018.dat
+scale_factor: 1.5
 n_elem: 100
 plot: true
 vtk: output.vtk
