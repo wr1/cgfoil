@@ -112,6 +112,7 @@ mesh = AirfoilMesh(
     plot=True,
     vtk="output.vtk",
     scale_factor=1.05,
+    split_view=True,
 )
 
 # Run the meshing

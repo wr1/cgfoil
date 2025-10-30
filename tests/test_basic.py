@@ -27,7 +27,7 @@ def test_import():
 
 def test_models():
     thickness = Thickness(type='constant', value=0.1)
-    assert thickness.compute([0.5], [0.5], [0.5]) == [0.1]
+    assert thickness.compute([0.5], [0.5], [0.5], [0.5]) == [0.1]
 
     ply = Ply(thickness=0.1, material=1)
     assert ply.thickness == 0.1
