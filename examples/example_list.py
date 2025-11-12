@@ -3,7 +3,7 @@
 import numpy as np
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import Skin, AirfoilMesh, Thickness
 
 # Simplified skins and webs for demonstration
 skins = {
@@ -56,19 +56,21 @@ run_cgfoil(mesh2)
 
 # Example 3: Using a NumPy array
 print("Example 3: Providing airfoil points as a NumPy array")
-airfoil_points_array = np.array([
-    [0.0, 0.0],
-    [0.1, 0.01],
-    [0.2, 0.02],
-    [0.3, 0.03],
-    [0.4, 0.04],
-    [0.5, 0.05],
-    [0.6, 0.04],
-    [0.7, 0.03],
-    [0.8, 0.02],
-    [0.9, 0.01],
-    [1.0, 0.0],
-])  # NumPy array of shape (n, 2)
+airfoil_points_array = np.array(
+    [
+        [0.0, 0.0],
+        [0.1, 0.01],
+        [0.2, 0.02],
+        [0.3, 0.03],
+        [0.4, 0.04],
+        [0.5, 0.05],
+        [0.6, 0.04],
+        [0.7, 0.03],
+        [0.8, 0.02],
+        [0.9, 0.01],
+        [1.0, 0.0],
+    ]
+)  # NumPy array of shape (n, 2)
 mesh3 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
@@ -107,6 +109,40 @@ mesh4 = AirfoilMesh(
     vtk="output4.vtk",
 )
 run_cgfoil(mesh4)
+
+# Example 5: Using array thickness definition
+print("Example 5: Using array thickness definition")
+# Load airfoil points to get the number of points
+airfoil_points = []
+with open("naca0018.dat", "r") as f:
+    lines = f.readlines()
+    for line in lines[1:]:
+        parts = line.strip().split()
+        if len(parts) == 2:
+            x = float(parts[0])
+            y = float(parts[1])
+            airfoil_points.append((x, y))
+# Define thickness array, e.g., varying thickness
+thickness_array = [
+    0.005 + 0.002 * abs(y) for x, y in airfoil_points
+]  # Example: thicker at camber
+skins_array = {
+    "skin": Skin(
+        thickness=Thickness(type="array", array=thickness_array),
+        material=1,
+        sort_index=1,
+    ),
+}
+mesh5 = AirfoilMesh(
+    skins=skins_array,
+    webs=web_definition,
+    airfoil_input="naca0018.dat",
+    n_elem=None,  # Do not resample to match array length
+    plot=True,
+    plot_filename="plot5.png",
+    vtk="output5.vtk",
+)
+run_cgfoil(mesh5)
 
 # Note: For VTK, ensure the file contains a line mesh with points in order.
 # The code will extract the first two coordinates (x, y) from each point.
