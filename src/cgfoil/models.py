@@ -1,6 +1,6 @@
 """Pydantic data models for cgfoil inputs."""
 
-from typing import Callable, Union, List, Tuple, Dict, Optional, Any
+from typing import Union, List, Tuple, Dict, Optional, Any
 from pydantic import BaseModel, ConfigDict
 import numpy as np
 
@@ -18,21 +18,27 @@ class Thickness(BaseModel):
     array: Optional[List[float]] = None
 
     def compute(
-        self, x: List[float], ta: List[float], tr: List[float], xr: List[float]
+        self,
+        x: List[float],
+        y: List[float],
+        ta: List[float],
+        tr: List[float],
+        xr: List[float],
     ) -> List[float]:
+        coord_vals = {"x": x, "y": y, "ta": ta, "tr": tr, "xr": xr}[self.coord]
         if self.type == "constant":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return [self.value] * len(coord_vals)
         elif self.type == "interp":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return np.interp(coord_vals, self.x, self.y).tolist()
         elif self.type == "condition":
             result = []
-            for i in range(len(x)):
+            for i in range(len(coord_vals)):
                 satisfied = True
                 if self.conditions:
                     for cond in self.conditions:
-                        coord = {"x": x, "ta": ta, "tr": tr, "xr": xr}[cond["coord"]][i]
+                        coord = {"x": x, "y": y, "ta": ta, "tr": tr, "xr": xr}[
+                            cond["coord"]
+                        ][i]
                         min_v, max_v = cond["range"]
                         if not (min_v <= coord <= max_v):
                             satisfied = False
@@ -40,7 +46,6 @@ class Thickness(BaseModel):
                 result.append(self.value if satisfied else self.else_value)
             return result
         elif self.type == "conditions":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             result = []
             for i, ci in enumerate(coord_vals):
                 val = self.else_value
@@ -70,17 +75,19 @@ class Thickness(BaseModel):
 class Ply(BaseModel):
     """Model for a ply in a web."""
 
-    thickness: Union[float, Callable[[float], float]]
+    thickness: Thickness
     material: Union[int, str]
 
 
 class Web(BaseModel):
     """Model for a web definition."""
 
-    points: Tuple[Tuple[float, float], Tuple[float, float]]
+    points: Optional[List[Tuple[float, float]]] = None
+    airfoil_input: Optional[Union[str, List[Tuple[float, float]], np.ndarray]] = None
     plies: List[Ply]
     normal_ref: List[float] = [0, 0]
-    n_cell: int
+    n_cell: int = 20
+    n_elem: Optional[int] = None
 
 
 class Skin(BaseModel):
@@ -106,22 +113,3 @@ class AirfoilMesh(BaseModel):
     plot_filename: Optional[str] = None
     materials: Optional[List[Dict[str, Any]]] = None
     scale_factor: float = 1.0
-
-
-class MeshResult(BaseModel):
-    """Model for mesh generation results."""
-
-    vertices: List[List[float]]
-    faces: List[List[int]]
-    outer_points: List[Tuple[float, float]]
-    inner_list: List[List[Tuple[float, float]]]
-    line_ply_list: List[List[Tuple[float, float]]]
-    untrimmed_lines: List[List[Tuple[float, float]]]
-    web_material_ids: List[int]
-    skin_material_ids: List[int]
-    web_names: List[str]
-    face_normals: List[Tuple[float, float]]
-    face_material_ids: List[int]
-    face_inplanes: List[Tuple[float, float]]
-    areas: Dict[int, float]
-    materials: Optional[List[Dict[str, Any]]] = None
