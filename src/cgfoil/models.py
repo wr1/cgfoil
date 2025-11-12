@@ -15,6 +15,7 @@ class Thickness(BaseModel):
     y: Optional[List[float]] = None
     conditions: Optional[List[Dict[str, Any]]] = None
     else_value: Optional[float] = 0.0
+    array: Optional[List[float]] = None
 
     def compute(
         self, x: List[float], ta: List[float], tr: List[float], xr: List[float]
@@ -54,6 +55,14 @@ class Thickness(BaseModel):
                             break
                 result.append(val)
             return result
+        elif self.type == "array":
+            if self.array is None:
+                raise ValueError("Array must be provided for thickness type 'array'")
+            if len(self.array) != len(x):
+                raise ValueError(
+                    f"Array length {len(self.array)} does not match number of points {len(x)}"
+                )
+            return self.array
         else:
             raise ValueError(f"Unknown thickness type: {self.type}")
 
@@ -90,7 +99,7 @@ class AirfoilMesh(BaseModel):
     skins: Dict[str, Skin]
     webs: Dict[str, Web]
     airfoil_input: Union[str, List[Tuple[float, float]], np.ndarray] = "naca0018.dat"
-    n_elem: int = 100
+    n_elem: Optional[int] = 100
     plot: bool = False
     vtk: Optional[str] = None
     split_view: bool = False
