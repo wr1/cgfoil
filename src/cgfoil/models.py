@@ -17,15 +17,8 @@ class Thickness(BaseModel):
     else_value: Optional[float] = 0.0
     array: Optional[List[float]] = None
 
-    def compute(
-        self,
-        x: List[float],
-        y: List[float],
-        ta: List[float],
-        tr: List[float],
-        xr: List[float],
-    ) -> List[float]:
-        coord_vals = {"x": x, "y": y, "ta": ta, "tr": tr, "xr": xr}[self.coord]
+    def compute(self, coords: Dict[str, List[float]]) -> List[float]:
+        coord_vals = coords[self.coord]
         if self.type == "constant":
             return [self.value] * len(coord_vals)
         elif self.type == "interp":
@@ -36,9 +29,8 @@ class Thickness(BaseModel):
                 satisfied = True
                 if self.conditions:
                     for cond in self.conditions:
-                        coord = {"x": x, "y": y, "ta": ta, "tr": tr, "xr": xr}[
-                            cond["coord"]
-                        ][i]
+                        coord_list = coords.get(cond["coord"], [])
+                        coord = coord_list[i] if i < len(coord_list) else 0.0
                         min_v, max_v = cond["range"]
                         if not (min_v <= coord <= max_v):
                             satisfied = False
@@ -63,9 +55,9 @@ class Thickness(BaseModel):
         elif self.type == "array":
             if self.array is None:
                 raise ValueError("Array must be provided for thickness type 'array'")
-            if len(self.array) != len(x):
+            if len(self.array) != len(coord_vals):
                 raise ValueError(
-                    f"Array length {len(self.array)} does not match number of points {len(x)}"
+                    f"Array length {len(self.array)} does not match number of points {len(coord_vals)}"
                 )
             return self.array
         else:
@@ -115,3 +107,22 @@ class AirfoilMesh(BaseModel):
     plot_filename: Optional[str] = None
     materials: Optional[List[Dict[str, Any]]] = None
     scale_factor: float = 1.0
+
+
+class MeshResult(BaseModel):
+    """Model for mesh generation results."""
+
+    vertices: List[List[float]]
+    faces: List[List[int]]
+    outer_points: List[Tuple[float, float]]
+    inner_list: List[List[Tuple[float, float]]]
+    line_ply_list: List[List[Tuple[float, float]]]
+    untrimmed_lines: List[List[Tuple[float, float]]]
+    web_material_ids: List[int]
+    skin_material_ids: List[int]
+    web_names: List[str]
+    face_normals: List[Tuple[float, float]]
+    face_material_ids: List[int]
+    face_inplanes: List[Tuple[float, float]]
+    areas: Dict[int, float]
+    materials: Optional[List[Dict[str, Any]]] = None
