@@ -24,7 +24,7 @@ from cgfoil.utils.summary import compute_cross_sectional_areas
 def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     skins = mesh.skins
     web_definition = mesh.webs
-    airfoil_filename = mesh.airfoil_filename
+    airfoil_input = mesh.airfoil_input
     n_elem = mesh.n_elem
     materials = mesh.materials or []
     scale_factor = mesh.scale_factor
@@ -68,7 +68,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     logger.info(f"skins materials: {[s.material for s in sorted_skins]}")
 
     # Load airfoil points (outer)
-    outer_points = load_airfoil(airfoil_filename, n_elem)
+    outer_points = load_airfoil(airfoil_input, n_elem)
 
     # Apply scale factor to airfoil points
     if scale_factor != 1.0:

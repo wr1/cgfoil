@@ -32,7 +32,7 @@ def test_cli_mesh():
         shutil.copy(yaml_src, yaml_dst)
         with open(yaml_dst, 'r') as f:
             data = yaml.safe_load(f)
-        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        data['airfoil_input'] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, 'w') as f:
             yaml.dump(data, f)
         naca_src = Path(__file__).parent / "naca0018.dat"
@@ -52,7 +52,7 @@ def test_cli_plot():
         shutil.copy(yaml_src, yaml_dst)
         with open(yaml_dst, 'r') as f:
             data = yaml.safe_load(f)
-        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        data['airfoil_input'] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, 'w') as f:
             yaml.dump(data, f)
         naca_src = Path(__file__).parent / "naca0018.dat"
@@ -76,7 +76,7 @@ def test_cli_export_vtk():
         shutil.copy(yaml_src, yaml_dst)
         with open(yaml_dst, 'r') as f:
             data = yaml.safe_load(f)
-        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        data['airfoil_input'] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, 'w') as f:
             yaml.dump(data, f)
         naca_src = Path(__file__).parent / "naca0018.dat"
@@ -100,7 +100,7 @@ def test_cli_export_anba():
         shutil.copy(yaml_src, yaml_dst)
         with open(yaml_dst, 'r') as f:
             data = yaml.safe_load(f)
-        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        data['airfoil_input'] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, 'w') as f:
             yaml.dump(data, f)
         naca_src = Path(__file__).parent / "naca0018.dat"
@@ -124,7 +124,7 @@ def test_cli_full():
         shutil.copy(yaml_src, yaml_dst)
         with open(yaml_dst, 'r') as f:
             data = yaml.safe_load(f)
-        data['airfoil_filename'] = str(Path(tmpdir) / "naca0018.dat")
+        data['airfoil_input'] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, 'w') as f:
             yaml.dump(data, f)
         # Copy naca
@@ -141,6 +141,5 @@ def test_cli_full():
 
 
 def test_cli_full_invalid_yaml():
-    with tempfile.TemporaryDirectory() as tmpdir:
-        result = subprocess.run(["cgfoil", "full", "nonexistent.yaml", tmpdir], capture_output=True, text=True)
-        assert result.returncode != 0
+    result = subprocess.run(["cgfoil", "full", "nonexistent.yaml", "/tmp"], capture_output=True, text=True)
+    assert result.returncode != 0

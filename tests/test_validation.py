@@ -11,7 +11,7 @@ def test_example_case_areas():
     with open(yaml_file, 'r') as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
-    mesh.airfoil_filename = str(Path(__file__).parent / "naca0018.dat")
+    mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
     mesh_result = generate_mesh(mesh)
     expected_areas = {0: 0.011635, 1: 0.015883, 2: 0.020083, 3: 0.001948}
     for mat, area in expected_areas.items():
@@ -23,7 +23,7 @@ def test_example_case_masses():
     with open(yaml_file, 'r') as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
-    mesh.airfoil_filename = str(Path(__file__).parent / "naca0018.dat")
+    mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
     mesh_result = generate_mesh(mesh)
     if mesh_result.materials:
         expected_masses = {0: 22.105773, 1: 1.905999, 2: 38.157430, 3: 3.506517}
@@ -41,7 +41,7 @@ def test_example_case_web_normals():
     with open(yaml_file, 'r') as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
-    mesh.airfoil_filename = str(Path(__file__).parent / "naca0018.dat")
+    mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
     mesh_result = generate_mesh(mesh)
     web_names = list(mesh.webs.keys())
     for web_idx, (web_name, web) in enumerate(mesh.webs.items()):

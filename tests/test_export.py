@@ -22,7 +22,7 @@ def mesh_result_fixture():
         with open(yaml_file, 'r') as f:
             data = yaml.safe_load(f)
         mesh = AirfoilMesh(**data)
-        mesh.airfoil_filename = str(Path(__file__).parent / "naca0018.dat")
+        mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
         mesh_result = generate_mesh(mesh)
         # Save to pickle
         import pickle

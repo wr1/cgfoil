@@ -1,7 +1,7 @@
 """Pydantic data models for cgfoil inputs."""
 
 from typing import Callable, Union, List, Tuple, Dict, Optional, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 import numpy as np
 
 
@@ -83,9 +83,11 @@ class Skin(BaseModel):
 class AirfoilMesh(BaseModel):
     """Model for defining an airfoil mesh."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     skins: Dict[str, Skin]
     webs: Dict[str, Web]
-    airfoil_filename: str = "naca0018.dat"
+    airfoil_input: Union[str, List[Tuple[float, float]], np.ndarray] = "naca0018.dat"
     n_elem: int = 100
     plot: bool = False
     vtk: Optional[str] = None

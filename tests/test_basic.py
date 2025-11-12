@@ -92,6 +92,27 @@ def test_load_airfoil(tmp_path):
     assert points[1].y() == 0.1
 
 
+def test_load_airfoil_list():
+    points_list = [(0.0, 0.0), (1.0, 0.1)]
+    points = load_airfoil(points_list)
+    assert len(points) == 2
+    assert points[0].x() == 0.0
+    assert points[0].y() == 0.0
+    assert points[1].x() == 1.0
+    assert points[1].y() == 0.1
+
+
+def test_load_airfoil_numpy():
+    import numpy as np
+    points_array = np.array([[0.0, 0.0], [1.0, 0.1]])
+    points = load_airfoil(points_array)
+    assert len(points) == 2
+    assert points[0].x() == 0.0
+    assert points[0].y() == 0.0
+    assert points[1].x() == 1.0
+    assert points[1].y() == 0.1
+
+
 def test_adjust_endpoints():
     points = [Point_2(0, 0), Point_2(1, 0), Point_2(2, 0)]
     adjusted = adjust_endpoints(points, 0.1)
@@ -210,7 +231,7 @@ def test_plot_mesh(mock_show):
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        airfoil_filename=fname,
+        airfoil_input=fname,
         plot=True,
         plot_filename=None,
         split_view=False
@@ -232,7 +253,7 @@ def test_run_cgfoil(mock_savefig):
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        airfoil_filename=fname,
+        airfoil_input=fname,
         plot=True,
         plot_filename='test.png'
     )

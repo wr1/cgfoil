@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cgfoil"
-version = "0.1.1"
+version = "0.1.0"
 description = "CGAL-based airfoil meshing tool"
 authors = [{name = "wr1", email = "8971152+wr1@users.noreply.github.com"}]
 readme = "README.md"
