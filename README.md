@@ -26,25 +26,25 @@ cgfoil mesh examples/airfoil_mesh.yaml -o mesh.pkl
 Plot existing mesh:
 
 ```bash
-cgfoil plot mesh.pkl -f plot.png
+cgfoil plot mesh.pkl -f plot.png -s
 ```
 
 Export to VTK:
 
 ```bash
-cgfoil export vtk mesh.pkl output.vtk
+cgfoil export vtk mesh.pkl -o output.vtk
 ```
 
 Export to ANBA:
 
 ```bash
-cgfoil export anba mesh.pkl output.json
+cgfoil export anba mesh.pkl -o output.json
 ```
 
 Run with defaults:
 
 ```bash
-cgfoil run -p -v output.vtk
+cgfoil run -p -v output.vtk -f naca0018.dat -s
 ```
 
 Options:

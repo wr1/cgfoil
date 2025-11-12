@@ -6,7 +6,6 @@ from pathlib import Path
 import yaml
 import pytest
 import json
-from unittest.mock import patch
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.models import AirfoilMesh
@@ -14,18 +13,19 @@ from cgfoil.core.main import generate_mesh
 from cgfoil.cli.cli import export_mesh_to_vtk, export_mesh_to_anba, summarize_mesh
 from cgfoil.utils.plot import plot_triangulation
 
-@pytest.fixture
 
+@pytest.fixture
 def mesh_result_fixture():
     with tempfile.TemporaryDirectory() as tmpdir:
         yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-        with open(yaml_file, 'r') as f:
+        with open(yaml_file, "r") as f:
             data = yaml.safe_load(f)
         mesh = AirfoilMesh(**data)
         mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
         mesh_result = generate_mesh(mesh)
         # Save to pickle
         import pickle
+
         mesh_file = os.path.join(tmpdir, "mesh.pck")
         with open(mesh_file, "wb") as f:
             pickle.dump(mesh_result, f)
@@ -44,6 +44,7 @@ def test_export_vtk_loadable(mesh_result_fixture):
     vtk_file = os.path.join(tmpdir, "test.vtk")
     export_mesh_to_vtk(os.path.join(tmpdir, "mesh.pck"), vtk_file)
     import pyvista as pv
+
     mesh = pv.read(vtk_file)
     assert "material_id" in mesh.cell_data
     assert "normals" in mesh.cell_data
@@ -86,7 +87,19 @@ def test_export_anba_fields(mesh_result_fixture):
     # Check material library fields
     for mat in data["matlibrary"]:
         if mat["type"] == "orthotropic":
-            required_keys = ["type", "e_xx", "e_yy", "e_zz", "g_xy", "g_xz", "g_yz", "nu_xy", "nu_zx", "nu_zy", "rho"]
+            required_keys = [
+                "type",
+                "e_xx",
+                "e_yy",
+                "e_zz",
+                "g_xy",
+                "g_xz",
+                "g_yz",
+                "nu_xy",
+                "nu_zx",
+                "nu_zy",
+                "rho",
+            ]
             assert all(key in mat for key in required_keys)
         elif mat["type"] == "isotropic":
             required_keys = ["type", "e", "nu", "rho"]

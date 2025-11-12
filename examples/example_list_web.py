@@ -43,7 +43,7 @@ if upper_point and lower_point:
     web_definition = {
         "web_at_03": Web(
             points=(lower_point, upper_point),
-            plies=[Ply(thickness=0.004, material=2)],
+            plies=[Ply(thickness=Thickness(type="constant", value=0.004), material=2)],
             normal_ref=[1, 0],
             n_cell=10,  # 10 cells
         ),
