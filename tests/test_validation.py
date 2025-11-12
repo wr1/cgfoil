@@ -8,7 +8,7 @@ from cgfoil.models import AirfoilMesh
 
 def test_example_case_areas():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, 'r') as f:
+    with open(yaml_file, "r") as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
@@ -20,7 +20,7 @@ def test_example_case_areas():
 
 def test_example_case_masses():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, 'r') as f:
+    with open(yaml_file, "r") as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
@@ -32,13 +32,16 @@ def test_example_case_masses():
             rho = mesh_result.materials[mat]["rho"]
             computed_mass = mesh_result.areas[mat] * rho
             assert abs(computed_mass - mass) < 1e-5
-        computed_total = sum(mesh_result.areas[mat] * mesh_result.materials[mat]["rho"] for mat in mesh_result.areas)
+        computed_total = sum(
+            mesh_result.areas[mat] * mesh_result.materials[mat]["rho"]
+            for mat in mesh_result.areas
+        )
         assert abs(computed_total - total) < 1e-5
 
 
 def test_example_case_web_normals():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, 'r') as f:
+    with open(yaml_file, "r") as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
