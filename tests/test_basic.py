@@ -24,15 +24,19 @@ def test_import():
 
 def test_models():
     thickness = Thickness(type="constant", value=0.1)
-    assert thickness.compute([0.5], [0.5], [0.5], [0.5]) == [0.1]
+    assert thickness.compute([0.5], [0.5], [0.5], [0.5], [0.5]) == [0.1]
 
     thickness_array = Thickness(type="array", array=[0.1, 0.2, 0.3])
     assert thickness_array.compute(
-        [0.0, 0.5, 1.0], [0.0, 0.5, 1.0], [0.0, 0.5, 1.0], [0.0, 0.5, 1.0]
+        [0.0, 0.5, 1.0],
+        [0.0, 0.5, 1.0],
+        [0.0, 0.5, 1.0],
+        [0.0, 0.5, 1.0],
+        [0.0, 0.5, 1.0],
     ) == [0.1, 0.2, 0.3]
 
-    ply = Ply(thickness=0.1, material=1)
-    assert ply.thickness == 0.1
+    ply = Ply(thickness=thickness, material=1)
+    assert ply.thickness.type == "constant"
     assert ply.material == 1
 
     skin = Skin(thickness=thickness, material=2, sort_index=1)
