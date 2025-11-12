@@ -2,7 +2,7 @@
 
 import numpy as np
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import Skin, AirfoilMesh, Thickness
 
 # Simplified skins and webs for demonstration
 skins = {
@@ -53,19 +53,21 @@ run_cgfoil(mesh2)
 
 # Example 3: Using a NumPy array
 print("Example 3: Providing airfoil points as a NumPy array")
-airfoil_points_array = np.array([
-    [0.0, 0.0],
-    [0.1, 0.01],
-    [0.2, 0.02],
-    [0.3, 0.03],
-    [0.4, 0.04],
-    [0.5, 0.05],
-    [0.6, 0.04],
-    [0.7, 0.03],
-    [0.8, 0.02],
-    [0.9, 0.01],
-    [1.0, 0.0],
-])  # NumPy array of shape (n, 2)
+airfoil_points_array = np.array(
+    [
+        [0.0, 0.0],
+        [0.1, 0.01],
+        [0.2, 0.02],
+        [0.3, 0.03],
+        [0.4, 0.04],
+        [0.5, 0.05],
+        [0.6, 0.04],
+        [0.7, 0.03],
+        [0.8, 0.02],
+        [0.9, 0.01],
+        [1.0, 0.0],
+    ]
+)  # NumPy array of shape (n, 2)
 mesh3 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
