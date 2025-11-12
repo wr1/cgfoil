@@ -129,8 +129,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     web_names = list(web_definition.keys())
     for web_name, web in web_definition.items():
         if web.airfoil_input:
-            base_points = load_airfoil(web.airfoil_input, web.n_elem)
-            untrimmed_base_line = [Point_2(*p) for p in base_points]
+            untrimmed_base_line = load_airfoil(web.airfoil_input, web.n_elem)
         elif web.points:
             if len(web.points) == 2:
                 p1_coords, p2_coords = web.points
