@@ -34,15 +34,19 @@ web_mesh = pv.PolyData(points_3d, lines=lines)
 web_mesh.save("web.vtk")
 print("Saved web to web.vtk")
 
-# Define thickness array for the web points
-thickness_array = [0.004 + 0.001 * abs(y) for x, y in web_points]  # Varying thickness
+# Define thickness arrays for the web points
+thickness_array1 = [0.004] * len(web_points)  # Constant for outer layers
+thickness_array2 = [0.008 + 0.002 * abs(y) for x, y in web_points]  # Varying for core
+thickness_array3 = [0.004] * len(web_points)  # Constant for inner layer
 
-# Define web using VTK input and array thickness
+# Define web using VTK input and array thickness for middle ply
 web_definition = {
     "web_at_03": Web(
         airfoil_input="web.vtk",
         plies=[
-            Ply(thickness=Thickness(type="array", array=thickness_array), material=2)
+            Ply(thickness=Thickness(type="array", array=thickness_array1), material=2),
+            Ply(thickness=Thickness(type="array", array=thickness_array2), material=3),
+            Ply(thickness=Thickness(type="array", array=thickness_array3), material=2),
         ],
         normal_ref=[1, 0],
     ),
