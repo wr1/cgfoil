@@ -16,7 +16,9 @@ class Thickness(BaseModel):
     conditions: Optional[List[Dict[str, Any]]] = None
     else_value: Optional[float] = 0.0
 
-    def compute(self, x: List[float], ta: List[float], tr: List[float], xr: List[float]) -> List[float]:
+    def compute(
+        self, x: List[float], ta: List[float], tr: List[float], xr: List[float]
+    ) -> List[float]:
         if self.type == "constant":
             coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return [self.value] * len(coord_vals)
