@@ -77,9 +77,10 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
 
     # Apply scale factor to web points
     for web in web_definition.values():
-        web.points = tuple(
-            (p[0] * scale_factor, p[1] * scale_factor) for p in web.points
-        )
+        if web.points:
+            web.points = tuple(
+                (p[0] * scale_factor, p[1] * scale_factor) for p in web.points
+            )
 
     # Compute coordinates: x, ta (absolute arc length), tr (relative arc length)
     x = [p.x() for p in outer_points]
@@ -99,8 +100,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
 
     # Ply thicknesses for airfoil
     ply_thicknesses = []
+    y_outer = [p.y() for p in outer_points]
     for s in sorted_skins:
-        thickness_result = s.thickness.compute(x, ta, tr, xr)
+        thickness_result = s.thickness.compute(x, y_outer, ta, tr, xr)
         ply_thicknesses.append(thickness_result)
     inner_list = []
     current = outer_points
@@ -125,10 +127,19 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     untrimmed_lines = []
     web_names = list(web_definition.keys())
     for web_name, web in web_definition.items():
-        p1_coords, p2_coords = web.points
-        p1 = Point_2(*p1_coords)
-        p2 = Point_2(*p2_coords)
-        untrimmed_base_line = create_line_mesh(p1, p2, web.n_cell)
+        if web.airfoil_input:
+            base_points = load_airfoil(web.airfoil_input, web.n_elem)
+            untrimmed_base_line = [Point_2(*p) for p in base_points]
+        elif web.points:
+            if len(web.points) == 2:
+                p1_coords, p2_coords = web.points
+                p1 = Point_2(*p1_coords)
+                p2 = Point_2(*p2_coords)
+                untrimmed_base_line = create_line_mesh(p1, p2, web.n_cell)
+            else:
+                untrimmed_base_line = [Point_2(*p) for p in web.points]
+        else:
+            raise ValueError(f"Web {web_name} must have either points or airfoil_input")
         untrimmed_lines.append(untrimmed_base_line)
         base_line = trim_line(untrimmed_base_line, inner_list[-1])
         base_line = adjust_endpoints(base_line, protrusion_distance)
@@ -136,10 +147,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         current_untrimmed = untrimmed_base_line
         normal_ref = web.normal_ref
         for ply in web.plies:
-            if callable(ply.thickness):
-                thickness_list = [ply.thickness(p.y()) for p in untrimmed_base_line]
-            else:
-                thickness_list = [ply.thickness] * len(untrimmed_base_line)
+            x_web = [p.x() for p in untrimmed_base_line]
+            y_web = [p.y() for p in untrimmed_base_line]
+            thickness_list = ply.thickness.compute(x_web, y_web, [], [], [])
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
