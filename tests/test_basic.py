@@ -24,15 +24,19 @@ def test_import():
 
 def test_models():
     thickness = Thickness(type="constant", value=0.1)
-    assert thickness.compute([0.5], [0.5], [0.5], [0.5], [0.5]) == [0.1]
+    assert thickness.compute(
+        {"x": [0.5], "y": [0.5], "ta": [0.5], "tr": [0.5], "xr": [0.5]}
+    ) == [0.1]
 
     thickness_array = Thickness(type="array", array=[0.1, 0.2, 0.3])
     assert thickness_array.compute(
-        [0.0, 0.5, 1.0],
-        [0.0, 0.5, 1.0],
-        [0.0, 0.5, 1.0],
-        [0.0, 0.5, 1.0],
-        [0.0, 0.5, 1.0],
+        {
+            "x": [0.0, 0.5, 1.0],
+            "y": [0.0, 0.5, 1.0],
+            "ta": [0.0, 0.5, 1.0],
+            "tr": [0.0, 0.5, 1.0],
+            "xr": [0.0, 0.5, 1.0],
+        }
     ) == [0.1, 0.2, 0.3]
 
     ply = Ply(thickness=thickness, material=1)
