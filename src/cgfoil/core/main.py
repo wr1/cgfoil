@@ -101,8 +101,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Ply thicknesses for airfoil
     ply_thicknesses = []
     y_outer = [p.y() for p in outer_points]
+    coords_skin = {"x": x, "y": y_outer, "ta": ta, "tr": tr, "xr": xr}
     for s in sorted_skins:
-        thickness_result = s.thickness.compute(x, y_outer, ta, tr, xr)
+        thickness_result = s.thickness.compute(coords_skin)
         ply_thicknesses.append(thickness_result)
     inner_list = []
     current = outer_points
@@ -149,7 +150,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         for ply in web.plies:
             x_web = [p.x() for p in untrimmed_base_line]
             y_web = [p.y() for p in untrimmed_base_line]
-            thickness_list = ply.thickness.compute(x_web, y_web, [], [], [])
+            coords_web = {"x": x_web, "y": y_web, "ta": [], "tr": [], "xr": []}
+            thickness_list = ply.thickness.compute(coords_web)
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
