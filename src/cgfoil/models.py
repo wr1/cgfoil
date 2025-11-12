@@ -82,6 +82,8 @@ class Ply(BaseModel):
 class Web(BaseModel):
     """Model for a web definition."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     points: Optional[List[Tuple[float, float]]] = None
     airfoil_input: Optional[Union[str, List[Tuple[float, float]], np.ndarray]] = None
     plies: List[Ply]
