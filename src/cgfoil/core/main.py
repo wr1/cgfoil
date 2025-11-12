@@ -2,7 +2,7 @@
 
 import math
 import numpy as np
-from typing import Dict, Optional
+from typing import Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.core.mesh import create_line_mesh
@@ -13,8 +13,7 @@ from cgfoil.core.trim import (
     trim_line,
     trim_self_intersecting_curve,
 )
-from cgfoil.models import Skin, Web, AirfoilMesh, MeshResult
-from cgfoil.utils.geometry import point_in_polygon
+from cgfoil.models import AirfoilMesh, MeshResult
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
 from cgfoil.utils.plot import plot_triangulation
@@ -72,11 +71,15 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
 
     # Apply scale factor to airfoil points
     if scale_factor != 1.0:
-        outer_points = [Point_2(p.x() * scale_factor, p.y() * scale_factor) for p in outer_points]
+        outer_points = [
+            Point_2(p.x() * scale_factor, p.y() * scale_factor) for p in outer_points
+        ]
 
     # Apply scale factor to web points
     for web in web_definition.values():
-        web.points = tuple((p[0] * scale_factor, p[1] * scale_factor) for p in web.points)
+        web.points = tuple(
+            (p[0] * scale_factor, p[1] * scale_factor) for p in web.points
+        )
 
     # Compute coordinates: x, ta (absolute arc length), tr (relative arc length)
     x = [p.x() for p in outer_points]
@@ -324,7 +327,9 @@ def run_cgfoil(mesh: AirfoilMesh):
             mesh_obj.cell_data["inplane"] = np.array(
                 [[i[0], i[1], 0.0] for i in mesh_result.face_inplanes]
             )
-            plane_orientations = [math.degrees(math.atan2(iy, ix)) for ix, iy in mesh_result.face_inplanes]
+            plane_orientations = [
+                math.degrees(math.atan2(iy, ix)) for ix, iy in mesh_result.face_inplanes
+            ]
             mesh_obj.cell_data["plane_orientations"] = plane_orientations
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
