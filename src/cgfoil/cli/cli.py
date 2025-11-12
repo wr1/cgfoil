@@ -6,11 +6,10 @@ import json
 import sys
 import math
 import os
-from pathlib import Path
 import pandas as pd
 from treeparse import cli, command, argument, option, group
 from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
-from cgfoil.models import AirfoilMesh
+from cgfoil.models import AirfoilMesh, Skin, Thickness
 from cgfoil.utils.logger import logger
 
 
@@ -82,26 +81,30 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str):
         matlibrary = []
         for mat in mesh_result.materials:
             if mat["type"] == "orthotropic":
-                matlibrary.append({
-                    "type": "orthotropic",
-                    "e_xx": mat["e_xx"],
-                    "e_yy": mat["e_yy"],
-                    "e_zz": mat["e_zz"],
-                    "g_xy": mat["g_xy"],
-                    "g_xz": mat["g_xz"],
-                    "g_yz": mat["g_yz"],
-                    "nu_xy": mat["nu_xy"],
-                    "nu_zx": mat["nu_zx"],
-                    "nu_zy": mat["nu_zy"],
-                    "rho": mat["rho"],
-                })
+                matlibrary.append(
+                    {
+                        "type": "orthotropic",
+                        "e_xx": mat["e_xx"],
+                        "e_yy": mat["e_yy"],
+                        "e_zz": mat["e_zz"],
+                        "g_xy": mat["g_xy"],
+                        "g_xz": mat["g_xz"],
+                        "g_yz": mat["g_yz"],
+                        "nu_xy": mat["nu_xy"],
+                        "nu_zx": mat["nu_zx"],
+                        "nu_zy": mat["nu_zy"],
+                        "rho": mat["rho"],
+                    }
+                )
             elif mat["type"] == "isotropic":
-                matlibrary.append({
-                    "type": "isotropic",
-                    "e": mat["e"],
-                    "nu": mat["nu"],
-                    "rho": mat["rho"],
-                })
+                matlibrary.append(
+                    {
+                        "type": "isotropic",
+                        "e": mat["e"],
+                        "nu": mat["nu"],
+                        "rho": mat["rho"],
+                    }
+                )
     else:
         unique_materials = sorted(set(mesh_result.face_material_ids))
         max_id = max(unique_materials) if unique_materials else 0
@@ -206,6 +209,27 @@ def full_mesh(yaml_file: str, output_dir: str):
     summarize_mesh(mesh_file, summary_file)
 
 
+def run_defaults(
+    plot: bool = False, vtk: str = None, file: str = "naca0018.dat", split: bool = False
+):
+    """Run meshing with default skins and no webs."""
+    skins = {
+        "skin": Skin(
+            thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1
+        )
+    }
+    web_definition = {}
+    mesh = AirfoilMesh(
+        skins=skins,
+        webs=web_definition,
+        airfoil_input=file,
+        plot=plot,
+        vtk=vtk,
+        split_view=split,
+    )
+    run_cgfoil(mesh)
+
+
 app = cli(
     name="cgfoil",
     help="CGAL-based airfoil meshing tool for generating constrained Delaunay triangulations of airfoils with plies and webs.",
@@ -277,6 +301,14 @@ vtk_cmd = command(
         ),
         argument(name="vtk_file", arg_type=str, help="Output VTK file"),
     ],
+    options=[
+        option(
+            flags=["--output", "-o"],
+            dest="vtk_file",
+            arg_type=str,
+            help="Output VTK file",
+        ),
+    ],
 )
 export_group.commands.append(vtk_cmd)
 
@@ -292,6 +324,14 @@ anba_cmd = command(
             sort_key=-1,
         ),
         argument(name="anba_file", arg_type=str, help="Output ANBA file"),
+    ],
+    options=[
+        option(
+            flags=["--output", "-o"],
+            dest="anba_file",
+            arg_type=str,
+            help="Output ANBA file",
+        ),
     ],
 )
 export_group.commands.append(anba_cmd)
@@ -326,9 +366,50 @@ full_cmd = command(
         ),
         argument(name="output_dir", arg_type=str, help="Output directory"),
     ],
+    options=[
+        option(
+            flags=["--output-dir", "-o"],
+            dest="output_dir",
+            arg_type=str,
+            help="Output directory",
+        ),
+    ],
     sort_key=4,
 )
 app.commands.append(full_cmd)
+
+run_cmd = command(
+    name="run",
+    help="Run meshing with defaults.",
+    callback=run_defaults,
+    options=[
+        option(
+            flags=["--plot", "-p"],
+            arg_type=bool,
+            default=False,
+            help="Plot the triangulation",
+        ),
+        option(
+            flags=["--vtk", "-v"],
+            arg_type=str,
+            help="Output VTK file",
+        ),
+        option(
+            flags=["--file", "-f"],
+            arg_type=str,
+            default="naca0018.dat",
+            help="Path to airfoil data file (.dat)",
+        ),
+        option(
+            flags=["--split", "-s"],
+            arg_type=bool,
+            default=False,
+            help="Enable split view plotting",
+        ),
+    ],
+    sort_key=5,
+)
+app.commands.append(run_cmd)
 
 
 def main():
