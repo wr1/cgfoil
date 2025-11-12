@@ -1,7 +1,10 @@
 """Basic tests for cgfoil."""
 
+import pytest
 import tempfile
 from unittest.mock import patch
+from pathlib import Path
+import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
@@ -23,7 +26,7 @@ def test_import():
 
 
 def test_models():
-    thickness = Thickness(type="constant", value=0.1)
+    thickness = Thickness(type='constant', value=0.1)
     assert thickness.compute([0.5], [0.5], [0.5], [0.5]) == [0.1]
 
     ply = Ply(thickness=0.1, material=1)
@@ -31,7 +34,7 @@ def test_models():
     assert ply.material == 1
 
     skin = Skin(thickness=thickness, material=2, sort_index=1)
-    assert skin.thickness.type == "constant"
+    assert skin.thickness.type == 'constant'
     assert skin.material == 2
     assert skin.sort_index == 1
 
@@ -101,7 +104,6 @@ def test_load_airfoil_list():
 
 def test_load_airfoil_numpy():
     import numpy as np
-
     points_array = np.array([[0.0, 0.0], [1.0, 0.1]])
     points = load_airfoil(points_array)
     assert len(points) == 2
@@ -169,8 +171,7 @@ def test_compute_cross_sectional_areas():
     assert areas[0] > 0
 
 
-@patch("matplotlib.pyplot.show")
-def test_plot_triangulation(mock_show):
+def test_plot_triangulation():
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
     cdt.insert_constraint(Point_2(0, 0), Point_2(1, 0))
     cdt.insert_constraint(Point_2(1, 0), Point_2(0.5, 1))
@@ -199,6 +200,8 @@ def test_plot_triangulation(mock_show):
         v1 = vertex_map[face.vertex(1)]
         v2 = vertex_map[face.vertex(2)]
         faces.append([3, v0, v1, v2])
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+        plot_filename = f.name
     plot_triangulation(
         vertices,
         faces,
@@ -213,18 +216,21 @@ def test_plot_triangulation(mock_show):
         face_material_ids,
         face_inplanes,
         split_view=False,
-        plot_filename=None,
+        plot_filename=plot_filename,
     )
-    mock_show.assert_called_once()
+    import os
+    assert os.path.exists(plot_filename)
+    os.unlink(plot_filename)
 
 
-@patch("matplotlib.pyplot.show")
-def test_plot_mesh(mock_show):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
+def test_plot_mesh():
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
-    thickness = Thickness(type="constant", value=0.01)
-    skins = {"skin": Skin(thickness=thickness, material=1, sort_index=1)}
+    thickness = Thickness(type='constant', value=0.01)
+    skins = {
+        "skin": Skin(thickness=thickness, material=1, sort_index=1)
+    }
     web_definition = {}
     mesh = AirfoilMesh(
         skins=skins,
@@ -232,27 +238,32 @@ def test_plot_mesh(mock_show):
         airfoil_input=fname,
         plot=True,
         plot_filename=None,
-        split_view=False,
+        split_view=False
     )
     mesh_result = generate_mesh(mesh)
-    plot_mesh(mesh_result, None, False)
-    mock_show.assert_called_once()
+    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+        plot_filename = f.name
+    plot_mesh(mesh_result, plot_filename, False)
+    import os
+    assert os.path.exists(plot_filename)
+    os.unlink(plot_filename)
 
-
-@patch("matplotlib.pyplot.savefig")
+@patch('matplotlib.pyplot.savefig')
 def test_run_cgfoil(mock_savefig):
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
-    thickness = Thickness(type="constant", value=0.01)
-    skins = {"skin": Skin(thickness=thickness, material=1, sort_index=1)}
+    thickness = Thickness(type='constant', value=0.01)
+    skins = {
+        "skin": Skin(thickness=thickness, material=1, sort_index=1)
+    }
     web_definition = {}
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
         airfoil_input=fname,
         plot=True,
-        plot_filename="test.png",
+        plot_filename='test.png'
     )
     run_cgfoil(mesh)
-    mock_savefig.assert_called_once_with("test.png")
+    mock_savefig.assert_called_once_with('test.png')

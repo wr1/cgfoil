@@ -1,8 +1,9 @@
 """Programmatic example demonstrating different airfoil input types for cgfoil."""
 
 import numpy as np
+import pyvista as pv
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, AirfoilMesh, Thickness
+from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
 # Simplified skins and webs for demonstration
 skins = {
@@ -21,7 +22,8 @@ mesh1 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="naca0018.dat",  # Filename
-    plot=False,  # Disable plotting for demo
+    plot=True,
+    plot_filename="plot1.png",
     vtk="output1.vtk",
 )
 run_cgfoil(mesh1)
@@ -46,48 +48,65 @@ mesh2 = AirfoilMesh(
     webs=web_definition,
     airfoil_input=airfoil_points_list,  # List of (x, y) tuples
     n_elem=50,  # Resample to 50 elements
-    plot=False,
+    plot=True,
+    plot_filename="plot2.png",
     vtk="output2.vtk",
 )
 run_cgfoil(mesh2)
 
 # Example 3: Using a NumPy array
 print("Example 3: Providing airfoil points as a NumPy array")
-airfoil_points_array = np.array(
-    [
-        [0.0, 0.0],
-        [0.1, 0.01],
-        [0.2, 0.02],
-        [0.3, 0.03],
-        [0.4, 0.04],
-        [0.5, 0.05],
-        [0.6, 0.04],
-        [0.7, 0.03],
-        [0.8, 0.02],
-        [0.9, 0.01],
-        [1.0, 0.0],
-    ]
-)  # NumPy array of shape (n, 2)
+airfoil_points_array = np.array([
+    [0.0, 0.0],
+    [0.1, 0.01],
+    [0.2, 0.02],
+    [0.3, 0.03],
+    [0.4, 0.04],
+    [0.5, 0.05],
+    [0.6, 0.04],
+    [0.7, 0.03],
+    [0.8, 0.02],
+    [0.9, 0.01],
+    [1.0, 0.0],
+])  # NumPy array of shape (n, 2)
 mesh3 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input=airfoil_points_array,  # NumPy array
     n_elem=50,  # Resample to 50 elements
-    plot=False,
+    plot=True,
+    plot_filename="plot3.png",
     vtk="output3.vtk",
 )
 run_cgfoil(mesh3)
 
-# Example 4: Using a VTK file (assuming you have a VTK line mesh file)
-print("Example 4: Loading airfoil from VTK file (commented out, requires VTK file)")
-# mesh4 = AirfoilMesh(
-#     skins=skins,
-#     webs=web_definition,
-#     airfoil_input="airfoil.vtk",  # VTK filename
-#     plot=False,
-#     vtk="output4.vtk",
-# )
-# run_cgfoil(mesh4)
+# Example 4: Using a VTK file created from .dat
+print("Example 4: Converting .dat to VTK and using VTK file")
+# Load points from .dat
+points_2d = []
+with open("naca0018.dat", "r") as f:
+    lines = f.readlines()
+    for line in lines[1:]:  # Skip header
+        parts = line.strip().split()
+        if len(parts) == 2:
+            x = float(parts[0])
+            y = float(parts[1])
+            points_2d.append([x, y])
+# Create pyvista PolyData for line
+points_3d = np.array([[x, y, 0.0] for x, y in points_2d])
+lines = np.hstack([[len(points_3d)], np.arange(len(points_3d))])
+mesh_vtk = pv.PolyData(points_3d, lines=lines)
+mesh_vtk.save("airfoil.vtk")
+print("Saved airfoil to airfoil.vtk")
+mesh4 = AirfoilMesh(
+    skins=skins,
+    webs=web_definition,
+    airfoil_input="airfoil.vtk",  # VTK filename
+    plot=True,
+    plot_filename="plot4.png",
+    vtk="output4.vtk",
+)
+run_cgfoil(mesh4)
 
 # Note: For VTK, ensure the file contains a line mesh with points in order.
 # The code will extract the first two coordinates (x, y) from each point.
