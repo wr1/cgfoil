@@ -12,6 +12,10 @@ def get_material_id(
     skin_material_ids,
 ):
     """Determine the material ID, whether it's skin, and the layer index for a given centroid."""
+    # First, ensure the centroid is inside the outer airfoil shape
+    if not point_in_polygon(centroid, outer_points):
+        return -1, False, -1
+    
     in_hole = len(inner_list) > 0 and point_in_polygon(centroid, inner_list[-1])
     material_id = -1
     is_skin = False
