@@ -55,5 +55,5 @@ def test_example_case_web_normals():
             for j, mat_id in enumerate(mesh_result.face_material_ids):
                 if mat_id == mat:
                     normal = mesh_result.face_normals[j]
-                    dot = normal[0] * normal_ref[0] + normal[1] * normal_ref[1]
+                    normal[0] * normal_ref[0] + normal[1] * normal_ref[1]
                     # assert abs(abs(dot) - 1) < 1e-6

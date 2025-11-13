@@ -5,7 +5,8 @@ from CGAL.CGAL_Kernel import Point_2
 
 
 def offset_airfoil(points, distances, normal_ref=None):
-    """Offset the airfoil by distances along normals (inward), aligned with normal_ref if provided."""
+    """Offset the airfoil by distances along normals (inward),
+    aligned with normal_ref if provided."""
     if isinstance(distances, (int, float)):
         distances = [distances] * len(points)
     n = len(points)

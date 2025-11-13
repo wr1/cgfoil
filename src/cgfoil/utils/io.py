@@ -7,7 +7,8 @@ import math
 
 
 def load_airfoil(airfoil_input, n_elem=None):
-    """Load airfoil points from various inputs, optionally resample to n_elem using PCHIP on arc length."""
+    """Load airfoil points from various inputs, optionally resample to n_elem
+    using PCHIP on arc length."""
     if isinstance(airfoil_input, str):
         if airfoil_input.endswith(".vtk"):
             import pyvista as pv

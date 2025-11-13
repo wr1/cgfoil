@@ -10,7 +10,8 @@ from cgfoil.cli.run import run_defaults
 
 app = cli(
     name="cgfoil",
-    help="CGAL-based airfoil meshing tool for generating constrained Delaunay triangulations of airfoils with plies and webs.",
+    help="CGAL-based airfoil meshing tool for generating constrained "
+    "Delaunay triangulations of airfoils with plies and webs.",
     max_width=120,
     show_types=True,
     show_defaults=True,

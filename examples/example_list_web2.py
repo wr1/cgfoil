@@ -1,23 +1,10 @@
-"""Programmatic example demonstrating airfoil meshing with webs loaded from VTK and array thickness."""
+"""Programmatic example demonstrating airfoil meshing with webs loaded from VTK
+and array thickness."""
 
 import numpy as np
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
-
-# Define skins
-skins = {
-    "outer_skin": Skin(
-        thickness=Thickness(type="constant", value=0.005),
-        material=1,
-        sort_index=1,
-    ),
-    "inner_skin": Skin(
-        thickness=Thickness(type="constant", value=0.005),
-        material=1,
-        sort_index=2,
-    ),
-}
 
 # Create a VTK file for the web
 # Define web points at x=0.3
@@ -38,6 +25,15 @@ print("Saved web to web.vtk")
 thickness_array1 = [0.004] * len(web_points)  # Constant for outer layers
 thickness_array2 = [0.008 + 0.002 * abs(y) for x, y in web_points]  # Varying for core
 thickness_array3 = [0.004] * len(web_points)  # Constant for inner layer
+
+# Define skins
+skins = {
+    "skin": Skin(
+        thickness=Thickness(type="constant", value=0.005),
+        material=1,
+        sort_index=1,
+    ),
+}
 
 # Define web using VTK input and array thickness for middle ply
 web_definition = {

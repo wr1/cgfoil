@@ -277,3 +277,13 @@ def test_run_cgfoil(mock_savefig):
     )
     run_cgfoil(mesh)
     mock_savefig.assert_called_once_with("test.png")
+
+
+def test_run_examples():
+    """Test running a simple example."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
+        f.write("1\n\n0.0 0.0\n1.0 0.1\n")
+        fname = f.name
+    skins = {"skin": Skin(thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1)}
+    mesh = AirfoilMesh(skins=skins, webs={}, airfoil_input=fname, plot=False, vtk=None)
+    run_cgfoil(mesh)

@@ -57,7 +57,8 @@ class Thickness(BaseModel):
                 raise ValueError("Array must be provided for thickness type 'array'")
             if len(self.array) != len(coord_vals):
                 raise ValueError(
-                    f"Array length {len(self.array)} does not match number of points {len(coord_vals)}"
+                    f"Array length {len(self.array)} does not match "
+                    f"number of points {len(coord_vals)}"
                 )
             return self.array
         else:
@@ -112,6 +113,8 @@ class AirfoilMesh(BaseModel):
 class MeshResult(BaseModel):
     """Model for mesh generation results."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     vertices: List[List[float]]
     faces: List[List[int]]
     outer_points: List[Tuple[float, float]]
@@ -126,3 +129,5 @@ class MeshResult(BaseModel):
     face_inplanes: List[Tuple[float, float]]
     areas: Dict[int, float]
     materials: Optional[List[Dict[str, Any]]] = None
+    skin_ply_thicknesses: List[List[float]]
+    web_ply_thicknesses: List[List[float]]

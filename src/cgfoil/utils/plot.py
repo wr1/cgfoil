@@ -22,7 +22,8 @@ def plot_triangulation(
     split_view=False,
     plot_filename=None,
 ):
-    """Plot the triangulation with filled triangles colored by material id and colorbar."""
+    """Plot the triangulation with filled triangles colored by material id
+    and colorbar."""
 
     # Increase figure size by 2 in both dimensions
     default_width, default_height = plt.rcParams["figure.figsize"]
@@ -211,7 +212,8 @@ def plot_triangulation(
     plt.text(
         max_thickness_x,
         ymax + 0.01,
-        f"x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nxr={xr_str}\nthickness={max_thickness:.4f}",
+        f"x={max_thickness_x:.3f}\nta={ta_str}\ntr={tr_str}\nxr={xr_str}"
+        f"\nthickness={max_thickness:.4f}",
         ha="center",
         va="bottom",
         fontsize=10,

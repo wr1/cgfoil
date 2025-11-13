@@ -3,7 +3,6 @@
 import pickle
 import json
 import math
-import os
 from cgfoil.utils.logger import logger
 
 

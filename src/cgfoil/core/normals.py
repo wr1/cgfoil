@@ -11,7 +11,8 @@ def get_material_id(
     web_material_ids,
     skin_material_ids,
 ):
-    """Determine the material ID, whether it's skin, and the layer index for a given centroid."""
+    """Determine the material ID, whether it's skin, and the layer index
+    for a given centroid."""
     # First, ensure the centroid is inside the outer airfoil shape
     if not point_in_polygon(centroid, outer_points):
         return -1, False, -1
@@ -65,7 +66,8 @@ def compute_face_normals(
     ply_normals,
     outer_tangents,
 ):
-    """Compute normals, inplane vectors, and material IDs for each finite face in the triangulation."""
+    """Compute normals, inplane vectors, and material IDs for each finite face
+    in the triangulation."""
     face_normals = []
     face_inplanes = []
     face_material_ids = []

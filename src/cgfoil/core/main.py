@@ -47,7 +47,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
                 missing.append(f"'{name}'")
         if missing:
             raise ValueError(
-                f"The following materials are not defined in the materials database: {', '.join(missing)}"
+                "The following materials are not defined in the materials "
+                f"database: {', '.join(missing)}"
             )
     else:
         name_to_id = {}
@@ -127,6 +128,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     ply_normals = []
     untrimmed_lines = []
     web_names = list(web_definition.keys())
+    web_ply_thicknesses = []
     for web_name, web in web_definition.items():
         if web.airfoil_input:
             untrimmed_base_line = load_airfoil(web.airfoil_input, web.n_elem)
@@ -151,6 +153,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             y_web = [p.y() for p in untrimmed_base_line]
             coords_web = {"x": x_web, "y": y_web, "ta": [], "tr": [], "xr": []}
             thickness_list = ply.thickness.compute(coords_web)
+            web_ply_thicknesses.append(thickness_list)
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
@@ -281,6 +284,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         face_inplanes=filtered_face_inplanes,
         areas=areas,
         materials=materials,
+        skin_ply_thicknesses=ply_thicknesses,
+        web_ply_thicknesses=web_ply_thicknesses,
     )
 
 
@@ -346,6 +351,58 @@ def run_cgfoil(mesh: AirfoilMesh):
             mesh_obj.cell_data["offset_normals"] = np.array(
                 [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals]
             )
+            # Add ply thicknesses
+            for ply_idx in range(len(mesh_result.skin_ply_thicknesses)):
+                thicknesses = []
+                for idx, mat_id in enumerate(mesh_result.face_material_ids):
+                    if mat_id in mesh_result.skin_material_ids and \
+                       mesh_result.skin_material_ids.index(mat_id) == ply_idx:
+                        # Find closest outer point
+                        _, v0, v1, v2 = mesh_result.faces[idx]
+                        p0 = mesh_result.vertices[v0][:2]
+                        p1 = mesh_result.vertices[v1][:2]
+                        p2 = mesh_result.vertices[v2][:2]
+                        cx = (p0[0] + p1[0] + p2[0]) / 3.0
+                        cy = (p0[1] + p1[1] + p2[1]) / 3.0
+                        closest_i = min(
+                            range(len(mesh_result.outer_points)),
+                            key=lambda j: (mesh_result.outer_points[j][0] - cx) ** 2 +
+                                          (mesh_result.outer_points[j][1] - cy) ** 2,
+                        )
+                        thicknesses.append(mesh_result.skin_ply_thicknesses[ply_idx][closest_i])
+                    else:
+                        thicknesses.append(0.0)
+                mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
+            for ply_idx in range(len(mesh_result.web_ply_thicknesses)):
+                thicknesses = []
+                for idx, mat_id in enumerate(mesh_result.face_material_ids):
+                    if mat_id == mesh_result.web_material_ids[ply_idx]:
+                        # Find closest on the untrimmed_line for that web
+                        cumulative = 0
+                        web_idx = 0
+                        ply_in_web = 0
+                        for w_idx, web in enumerate(mesh.webs.values()):
+                            if ply_idx < cumulative + len(web.plies):
+                                web_idx = w_idx
+                                ply_in_web = ply_idx - cumulative
+                                break
+                            cumulative += len(web.plies)
+                        untrimmed = mesh_result.untrimmed_lines[web_idx]
+                        _, v0, v1, v2 = mesh_result.faces[idx]
+                        p0 = mesh_result.vertices[v0][:2]
+                        p1 = mesh_result.vertices[v1][:2]
+                        p2 = mesh_result.vertices[v2][:2]
+                        cx = (p0[0] + p1[0] + p2[0]) / 3.0
+                        cy = (p0[1] + p1[1] + p2[1]) / 3.0
+                        closest_i = min(
+                            range(len(untrimmed)),
+                            key=lambda j: (untrimmed[j][0] - cx) ** 2 +
+                                          (untrimmed[j][1] - cy) ** 2,
+                        )
+                        thicknesses.append(mesh_result.web_ply_thicknesses[ply_idx][closest_i])
+                    else:
+                        thicknesses.append(0.0)
+                mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
 

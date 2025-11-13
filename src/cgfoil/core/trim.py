@@ -6,7 +6,8 @@ from cgfoil.utils.logger import logger
 
 
 def trim_self_intersecting_curve(points):
-    """Trim the curve to remove loose ends by keeping the closed loop between self-intersection points."""
+    """Trim the curve to remove loose ends by keeping the closed loop
+    between self-intersection points."""
     n = len(points)
     intersecting_indices = set()
     for i in range(n - 1):
@@ -17,7 +18,8 @@ def trim_self_intersecting_curve(points):
                 intersecting_indices.add(i)
                 intersecting_indices.add(j)
     logger.info(
-        f"Self intersecting indices: {intersecting_indices}, count: {len(intersecting_indices)}"
+        f"Self intersecting indices: {intersecting_indices}, "
+        f"count: {len(intersecting_indices)}"
     )
     if intersecting_indices:
         min_idx = min(intersecting_indices)
@@ -56,7 +58,10 @@ def trim_line(points, inner_points):
             min_idx = min(indices)
             max_idx = max(indices)
             trimmed = all_points[min_idx : max_idx + 1]
-            logger.info(f"Trimmed line to {len(trimmed)} points between indices {min_idx} to {max_idx}")
+            logger.info(
+                f"Trimmed line to {len(trimmed)} points between "
+                f"indices {min_idx} to {max_idx}"
+            )
             return trimmed
     logger.info("No trimming applied, returning original points")
     return points
@@ -76,12 +81,24 @@ def adjust_endpoints(points, distance):
         overall_dx /= len_overall
         overall_dy /= len_overall
         # For start point, move backward along overall direction
-        new_p0 = Point_2(p_start.x() - distance * overall_dx, p_start.y() - distance * overall_dy)
-        logger.info(f"Adjusted start point from ({p_start.x():.4f}, {p_start.y():.4f}) to ({new_p0.x():.4f}, {new_p0.y():.4f}) along overall direction")
+        new_p0 = Point_2(
+            p_start.x() - distance * overall_dx,
+            p_start.y() - distance * overall_dy,
+        )
+        logger.info(
+            f"Adjusted start point from ({p_start.x():.4f}, {p_start.y():.4f}) "
+            f"to ({new_p0.x():.4f}, {new_p0.y():.4f}) along overall direction"
+        )
         points[0] = new_p0
         # For end point, move forward along overall direction
-        new_pn = Point_2(p_end.x() + distance * overall_dx, p_end.y() + distance * overall_dy)
-        logger.info(f"Adjusted end point from ({p_end.x():.4f}, {p_end.y():.4f}) to ({new_pn.x():.4f}, {new_pn.y():.4f}) along overall direction")
+        new_pn = Point_2(
+            p_end.x() + distance * overall_dx,
+            p_end.y() + distance * overall_dy,
+        )
+        logger.info(
+            f"Adjusted end point from ({p_end.x():.4f}, {p_end.y():.4f}) "
+            f"to ({new_pn.x():.4f}, {new_pn.y():.4f}) along overall direction"
+        )
         points[-1] = new_pn
     else:
         logger.warning("Overall direction length is zero, no adjustment made")
