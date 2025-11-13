@@ -35,6 +35,10 @@ def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
         angle = (angle + 90) % 180 - 90
         plane_orientations.append(angle)
     mesh_obj.cell_data["plane_orientations"] = plane_orientations
+    # Add offset normals (inward for skins)
+    mesh_obj.cell_data["offset_normals"] = np.array(
+        [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals]
+    )
     mesh_obj.save(vtk_file)
     logger.info(f"Mesh exported to {vtk_file}")
 

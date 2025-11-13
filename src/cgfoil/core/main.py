@@ -342,6 +342,10 @@ def run_cgfoil(mesh: AirfoilMesh):
                 math.degrees(math.atan2(iy, ix)) for ix, iy in mesh_result.face_inplanes
             ]
             mesh_obj.cell_data["plane_orientations"] = plane_orientations
+            # Add offset normals
+            mesh_obj.cell_data["offset_normals"] = np.array(
+                [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals]
+            )
             mesh_obj.save(mesh.vtk)
             logger.info(f"Mesh saved to {mesh.vtk}")
 

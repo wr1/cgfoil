@@ -2,24 +2,24 @@
 
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, AirfoilMesh, Thickness
+from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
 # Load VTP file containing multiple sections
-vtp_file = "airfoil_sections.vtp"  # Assume this file exists with cell_data 'section_id'
+vtp_file = "airfoil_sections.vtp"  # Assume this file exists with cell_data 'section_id' and 'panel_id'
 mesh_vtp = (
     pv.read(vtp_file).threshold(value=(28, 28), scalars="section_id").rotate_z(90)
 )
 
 airfoil = mesh_vtp.threshold(value=(0, 12), scalars="panel_id")
+web1 = mesh_vtp.threshold(value=(-1, -1), scalars="panel_id")
+web2 = mesh_vtp.threshold(value=(-2, -2), scalars="panel_id")
 
-
-# Isolate section with section_id = 28
-# section_id = 28
-# mask = mesh_vtp.cell_data["section_id"] == section_id
-# section_mesh = mesh_vtp.extract_cells(mask)
-
-# Extract points from the isolated section (assuming it's a line or polyline)
+# Extract points from the airfoil section
 points_2d = airfoil.points[:, :2].tolist()  # Take x, y coordinates
+
+# Extract points from the web sections
+web_points_2d_1 = web1.points[:, :2].tolist()
+web_points_2d_2 = web2.points[:, :2].tolist()
 
 # Define skins
 skins = {
@@ -30,10 +30,28 @@ skins = {
     ),
 }
 
+# Define webs
+web_definition = {
+    "web1": Web(
+        airfoil_input=web_points_2d_1,  # List of (x, y) tuples for the web
+        plies=[
+            Ply(thickness=Thickness(type="constant", value=0.004), material=2),
+        ],
+        normal_ref=[1, 0],
+    ),
+    "web2": Web(
+        airfoil_input=web_points_2d_2,  # List of (x, y) tuples for the web
+        plies=[
+            Ply(thickness=Thickness(type="constant", value=0.004), material=3),
+        ],
+        normal_ref=[-1, 0],
+    ),
+}
+
 # Create AirfoilMesh using the extracted points
 mesh = AirfoilMesh(
     skins=skins,
-    webs={},
+    webs=web_definition,
     airfoil_input=points_2d,  # List of (x, y) tuples
     plot=True,
     plot_filename="plot_vtp_section.png",
