@@ -27,23 +27,30 @@ def get_material_id(
                 if len(inner_list) == 0 or not point_in_polygon(
                     centroid, inner_list[0]
                 ):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
+                    elif not skin_material_ids:
+                        material_id = 2  # Fixed material ID if no skins
+                        is_skin = True
+                        layer_index = i
                     break
             elif i < len(inner_list):
                 if point_in_polygon(
                     centroid, inner_list[i - 1]
                 ) and not point_in_polygon(centroid, inner_list[i]):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
                     break
             else:
                 if point_in_polygon(centroid, inner_list[-1]):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
                     break
     if material_id == -1:
         for idx_ply, ply in enumerate(line_ply_list):

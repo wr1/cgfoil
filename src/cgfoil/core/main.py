@@ -114,12 +114,15 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         inner_list.append(inner_points)
 
     # Calculate protrusion distance from last ply thickness
-    last_ply = ply_thicknesses[-1]
-    if isinstance(last_ply, (list, np.ndarray)):
-        protrusion_distance = 0.5 * max(last_ply)
+    if ply_thicknesses:
+        last_ply = ply_thicknesses[-1]
+        if isinstance(last_ply, (list, np.ndarray)):
+            protrusion_distance = 0.5 * max(last_ply)
+        else:
+            protrusion_distance = 0.5 * last_ply
+        if protrusion_distance == 0:
+            protrusion_distance = 1e-3
     else:
-        protrusion_distance = 0.5 * last_ply
-    if protrusion_distance == 0:
         protrusion_distance = 1e-3
 
     # Create line plies for each web
@@ -143,7 +146,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         else:
             raise ValueError(f"Web {web_name} must have either points or airfoil_input")
         untrimmed_lines.append(untrimmed_base_line)
-        base_line = trim_line(untrimmed_base_line, inner_list[-1])
+        base_line = trim_line(untrimmed_base_line, inner_list[-1] if inner_list else outer_points)
         base_line = adjust_endpoints(base_line, protrusion_distance)
         current_line = base_line
         current_untrimmed = untrimmed_base_line
@@ -157,7 +160,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
-            offset_line = trim_line(untrimmed_offset_line, inner_list[-1])
+            offset_line = trim_line(untrimmed_offset_line, inner_list[-1] if inner_list else outer_points)
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
