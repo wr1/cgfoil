@@ -3,7 +3,6 @@
 import subprocess
 import os
 import pytest
-from pathlib import Path
 
 
 def test_example():
@@ -51,7 +50,23 @@ def test_example_vtp_section():
     vtp_file = "airfoil_sections.vtp"
     if os.path.exists(vtp_file):
         result = subprocess.run(
-            ["python", "examples/example_vtp_section.py"], capture_output=True, text=True
+            ["python", "examples/example_vtp_section.py"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0
+    else:
+        pytest.skip("VTP file not found")
+
+
+def test_example_vtp_multi_section():
+    """Test running example_vtp_multi_section.py if VTP file exists."""
+    vtp_file = "airfoil_sections.vtp"
+    if os.path.exists(vtp_file):
+        result = subprocess.run(
+            ["python", "examples/example_vtp_multi_section.py"],
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
     else:
