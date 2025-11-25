@@ -146,7 +146,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         else:
             raise ValueError(f"Web {web_name} must have either points or airfoil_input")
         untrimmed_lines.append(untrimmed_base_line)
-        base_line = trim_line(untrimmed_base_line, inner_list[-1] if inner_list else outer_points)
+        base_line = trim_line(
+            untrimmed_base_line, inner_list[-1] if inner_list else outer_points
+        )
         base_line = adjust_endpoints(base_line, protrusion_distance)
         current_line = base_line
         current_untrimmed = untrimmed_base_line
@@ -160,7 +162,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             untrimmed_offset_line = offset_airfoil(
                 current_untrimmed, thickness_list, normal_ref
             )
-            offset_line = trim_line(untrimmed_offset_line, inner_list[-1] if inner_list else outer_points)
+            offset_line = trim_line(
+                untrimmed_offset_line, inner_list[-1] if inner_list else outer_points
+            )
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
@@ -358,8 +362,10 @@ def run_cgfoil(mesh: AirfoilMesh):
             for ply_idx in range(len(mesh_result.skin_ply_thicknesses)):
                 thicknesses = []
                 for idx, mat_id in enumerate(mesh_result.face_material_ids):
-                    if mat_id in mesh_result.skin_material_ids and \
-                       mesh_result.skin_material_ids.index(mat_id) == ply_idx:
+                    if (
+                        mat_id in mesh_result.skin_material_ids
+                        and mesh_result.skin_material_ids.index(mat_id) == ply_idx
+                    ):
                         # Find closest outer point
                         _, v0, v1, v2 = mesh_result.faces[idx]
                         p0 = mesh_result.vertices[v0][:2]
@@ -369,10 +375,12 @@ def run_cgfoil(mesh: AirfoilMesh):
                         cy = (p0[1] + p1[1] + p2[1]) / 3.0
                         closest_i = min(
                             range(len(mesh_result.outer_points)),
-                            key=lambda j: (mesh_result.outer_points[j][0] - cx) ** 2 +
-                                          (mesh_result.outer_points[j][1] - cy) ** 2,
+                            key=lambda j: (mesh_result.outer_points[j][0] - cx) ** 2
+                            + (mesh_result.outer_points[j][1] - cy) ** 2,
                         )
-                        thicknesses.append(mesh_result.skin_ply_thicknesses[ply_idx][closest_i])
+                        thicknesses.append(
+                            mesh_result.skin_ply_thicknesses[ply_idx][closest_i]
+                        )
                     else:
                         thicknesses.append(0.0)
                 mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
@@ -399,10 +407,12 @@ def run_cgfoil(mesh: AirfoilMesh):
                         cy = (p0[1] + p1[1] + p2[1]) / 3.0
                         closest_i = min(
                             range(len(untrimmed)),
-                            key=lambda j: (untrimmed[j][0] - cx) ** 2 +
-                                          (untrimmed[j][1] - cy) ** 2,
+                            key=lambda j: (untrimmed[j][0] - cx) ** 2
+                            + (untrimmed[j][1] - cy) ** 2,
                         )
-                        thicknesses.append(mesh_result.web_ply_thicknesses[ply_idx][closest_i])
+                        thicknesses.append(
+                            mesh_result.web_ply_thicknesses[ply_idx][closest_i]
+                        )
                     else:
                         thicknesses.append(0.0)
                 mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses

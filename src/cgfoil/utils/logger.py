@@ -8,7 +8,11 @@ import sys
 logging.basicConfig(
     level="INFO",
     format="%(message)s",
-    handlers=[RichHandler(rich_tracebacks=True, console=Console(file=sys.stdout), show_time=False)],
+    handlers=[
+        RichHandler(
+            rich_tracebacks=True, console=Console(file=sys.stdout), show_time=False
+        )
+    ],
 )
 
 logger = logging.getLogger("cgfoil")
