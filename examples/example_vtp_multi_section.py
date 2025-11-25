@@ -1,24 +1,27 @@
-"""Example demonstrating airfoil meshing from a VTP file with multi-section processing."""
+"""Example demonstrating airfoil meshing from a VTP file with multi-section processing, parallelized using multiprocessing."""
 
 import os
-import pyvista as pv
+import multiprocessing
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
+try:
+    import pyvista as pv
+except ImportError:
+    raise ImportError("pyvista is required for this example")
 
-def process_vtp_multi_section(vtp_file: str, output_base_dir: str):
-    """Process VTP file for all unique section_ids, outputting to subdirectories."""
-    # Load VTP file
-    mesh_vtp = pv.read(vtp_file)
+# Rotation angle around z-axis
+ROTATION_ANGLE = 90
 
-    # Get unique section_ids
-    if "section_id" not in mesh_vtp.cell_data:
-        raise ValueError("section_id not found in VTP file")
-    unique_section_ids = mesh_vtp.cell_data["section_id"]
-    unique_ids = set(unique_section_ids)
 
-    for section_id in sorted(unique_ids):
-        print(f"Processing section_id: {section_id}")
+def process_single_section(args):
+    """Process a single section_id."""
+    section_id, vtp_file, output_base_dir = args
+    try:
+        print(f"Starting processing section_id: {section_id}")
+        # Load VTP file in each process to avoid serialization issues
+        mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
+
         # Create subdirectory
         section_dir = os.path.join(output_base_dir, f"section_{section_id}")
         os.makedirs(section_dir, exist_ok=True)
@@ -101,13 +104,42 @@ def process_vtp_multi_section(vtp_file: str, output_base_dir: str):
             webs=web_definition,
             airfoil_input=points_2d,
             n_elem=None,
-            plot=True,
-            plot_filename=os.path.join(section_dir, "plot.png"),
+            plot=False,  # Disable plotting in parallel to avoid issues
+            plot_filename=None,
             vtk=os.path.join(section_dir, "output.vtk"),
         )
 
         # Run the meshing
         run_cgfoil(mesh)
+        print(f"Completed processing section_id: {section_id}")
+    except Exception as e:
+        print(f"Error processing section_id {section_id}: {e}")
+
+
+def process_vtp_multi_section(
+    vtp_file: str, output_base_dir: str, num_processes: int = None
+):
+    """Process VTP file for all unique section_ids, outputting to subdirectories, using multiprocessing."""
+    # Load VTP file to get unique ids
+    mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
+
+    # Get unique section_ids
+    if "section_id" not in mesh_vtp.cell_data:
+        raise ValueError("section_id not found in VTP file")
+    unique_section_ids = mesh_vtp.cell_data["section_id"]
+    unique_ids = sorted(set(unique_section_ids))
+    total_sections = len(unique_ids)
+    print(f"Found {total_sections} unique section_ids: {unique_ids}")
+
+    # Prepare arguments for multiprocessing
+    args_list = [(section_id, vtp_file, output_base_dir) for section_id in unique_ids]
+
+    # Use multiprocessing Pool
+    if num_processes is None:
+        num_processes = min(multiprocessing.cpu_count(), total_sections)
+    print(f"Using {num_processes} processes")
+    with multiprocessing.Pool(processes=num_processes) as pool:
+        pool.map(process_single_section, args_list)
 
 
 # Example usage
