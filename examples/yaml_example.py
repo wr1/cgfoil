@@ -15,6 +15,7 @@ with open(yaml_file, "r") as f:
     data = yaml.safe_load(f)
 
 # Validate and create AirfoilMesh model
+data["plot"] = False  # Disable plotting for headless CI
 mesh = AirfoilMesh(**data)
 
 # Run the meshing

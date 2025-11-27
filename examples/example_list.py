@@ -22,8 +22,8 @@ mesh1 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="naca0018.dat",  # Filename
-    plot=True,
-    plot_filename="plot1.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output1.vtk",
 )
 run_cgfoil(mesh1)
@@ -48,8 +48,8 @@ mesh2 = AirfoilMesh(
     webs=web_definition,
     airfoil_input=airfoil_points_list,  # List of (x, y) tuples
     n_elem=50,  # Resample to 50 elements
-    plot=True,
-    plot_filename="plot2.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output2.vtk",
 )
 run_cgfoil(mesh2)
@@ -76,8 +76,8 @@ mesh3 = AirfoilMesh(
     webs=web_definition,
     airfoil_input=airfoil_points_array,  # NumPy array
     n_elem=50,  # Resample to 50 elements
-    plot=True,
-    plot_filename="plot3.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output3.vtk",
 )
 run_cgfoil(mesh3)
@@ -104,8 +104,8 @@ mesh4 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="airfoil.vtk",  # VTK filename
-    plot=True,
-    plot_filename="plot4.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output4.vtk",
 )
 run_cgfoil(mesh4)
@@ -138,8 +138,8 @@ mesh5 = AirfoilMesh(
     webs=web_definition,
     airfoil_input="naca0018.dat",
     n_elem=None,  # Do not resample to match array length
-    plot=True,
-    plot_filename="plot5.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output5.vtk",
 )
 run_cgfoil(mesh5)

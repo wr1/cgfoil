@@ -88,7 +88,7 @@ webs:
 airfoil_input: naca0018.dat
 scale_factor: 2.5
 n_elem: 100
-plot: true
+plot: false
 vtk: output.vtk
 materials:
   - name: ortho_carbon

@@ -53,8 +53,8 @@ mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="naca0018.dat",
-    plot=True,
-    plot_filename="plot_web2.png",
+    plot=False,  # Disable plotting for headless CI
+    plot_filename=None,
     vtk="output_web2.vtk",
 )
 
