@@ -17,7 +17,7 @@ def export_mesh_to_vtk(mesh_file: str, vtk_file: str):
         print("pyvista not available")
         return
     mesh_obj = pv.UnstructuredGrid(
-        mesh_result.faces,
+        np.array(mesh_result.faces).flatten(),
         [pv.CellType.TRIANGLE] * len(mesh_result.faces),
         mesh_result.vertices,
     )

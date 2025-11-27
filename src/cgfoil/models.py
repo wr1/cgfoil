@@ -78,10 +78,9 @@ class Web(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     points: Optional[List[Tuple[float, float]]] = None
-    airfoil_input: Optional[Union[str, List[Tuple[float, float]], np.ndarray]] = None
+    coord_input: Optional[Union[str, List[Tuple[float, float]], np.ndarray]] = None
     plies: List[Ply]
     normal_ref: List[float] = [0, 0]
-    n_cell: int = 20
     n_elem: Optional[int] = None
 
 
@@ -101,7 +100,7 @@ class AirfoilMesh(BaseModel):
     skins: Dict[str, Skin]
     webs: Dict[str, Web]
     airfoil_input: Union[str, List[Tuple[float, float]], np.ndarray] = "naca0018.dat"
-    n_elem: Optional[int] = 100
+    n_elem: Optional[int] = None
     plot: bool = False
     vtk: Optional[str] = None
     split_view: bool = False

@@ -1,4 +1,4 @@
-"""Example demonstrating airfoil meshing from a VTP file with multiple plies for skins and webs."""
+"""Example demonstrating airfoil meshing from a VTP file with multiple plies."""
 
 import pyvista as pv
 import re
@@ -6,8 +6,8 @@ from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
 # Load VTP file containing multiple sections
-vtp_file = "airfoil_sections.vtp"  # Assume this file exists with cell_data
-# 'section_id', 'panel_id', and cell_data for thicknesses like 'ply_000001_plate_100_thickness'
+vtp_file = "examples/airfoil_sections.vtp"  # Assume this file exists with cell_data
+# 'section_id', 'panel_id', and cell_data for thicknesses
 mesh_vtp = (
     pv.read(vtp_file).threshold(value=(28, 28), scalars="section_id").rotate_z(90)
 )
@@ -63,7 +63,7 @@ for web_name, thicknesses, points in web_meshes:
         material_id += 1
     normal_ref = [1, 0] if web_name == "web1" else [-1, 0]
     web_definition[web_name] = Web(
-        airfoil_input=points,
+        coord_input=points,
         plies=plies,
         normal_ref=normal_ref,
     )

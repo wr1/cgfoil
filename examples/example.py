@@ -57,9 +57,10 @@ skins = {
 }
 
 # Define custom web definition
+# Note: Multiple plies can share the same material
 web_definition = {
     "web1": Web(
-        points=((0.25, -0.1), (0.25, 0.1)),
+        coord_input=[(0.25, -0.1), (0.25, 0.1)],
         plies=[
             Ply(thickness=Thickness(type="constant", value=0.004), material=5),
             Ply(
@@ -74,10 +75,10 @@ web_definition = {
             Ply(thickness=Thickness(type="constant", value=0.004), material=5),
         ],
         normal_ref=[1, 0],
-        n_cell=20,
+        n_elem=20,
     ),
     "web2": Web(
-        points=((0.4, -0.1), (0.4, 0.1)),
+        coord_input=[(0.4, -0.1), (0.4, 0.1)],
         plies=[
             Ply(thickness=Thickness(type="constant", value=0.004), material=5),
             Ply(
@@ -92,10 +93,10 @@ web_definition = {
             Ply(thickness=Thickness(type="constant", value=0.004), material=5),
         ],
         normal_ref=[-1, 0],
-        n_cell=15,
+        n_elem=15,
     ),
     "web3": Web(
-        points=((0.775, -0.1), (0.775, 0.1)),
+        coord_input=[(0.775, -0.1), (0.775, 0.1)],
         plies=[
             Ply(thickness=Thickness(type="constant", value=0.005), material=5),
             Ply(
@@ -105,7 +106,7 @@ web_definition = {
             Ply(thickness=Thickness(type="constant", value=0.005), material=5),
         ],
         normal_ref=[-1, 0],
-        n_cell=15,
+        n_elem=15,
     ),
 }
 
@@ -113,7 +114,7 @@ web_definition = {
 mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
-    airfoil_input="naca0018.dat",
+    airfoil_input="examples/naca0018.dat",
     plot=False,  # Disable plotting for headless CI
     vtk="output.vtk",
     scale_factor=1.05,

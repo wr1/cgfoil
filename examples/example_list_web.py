@@ -19,7 +19,7 @@ skins = {
 
 # Load airfoil points to find points at x=0.3
 airfoil_points = []
-with open("naca0018.dat", "r") as f:
+with open("examples/naca0018.dat", "r") as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
@@ -42,10 +42,10 @@ if upper_point and lower_point:
     # Define web between upper and lower points at x=0.3
     web_definition = {
         "web_at_03": Web(
-            points=(lower_point, upper_point),
+            coord_input=[lower_point, upper_point],
             plies=[Ply(thickness=Thickness(type="constant", value=0.004), material=2)],
             normal_ref=[1, 0],
-            n_cell=10,  # 10 cells
+            n_elem=10,  # 10 cells
         ),
     }
 else:
@@ -56,7 +56,7 @@ else:
 mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
-    airfoil_input="naca0018.dat",
+    airfoil_input="examples/naca0018.dat",
     plot=False,  # Disable plotting for headless CI
     plot_filename=None,
     vtk="output_web.vtk",

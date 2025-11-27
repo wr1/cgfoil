@@ -47,7 +47,7 @@ def test_example_list_web2():
 
 def test_example_vtp_section():
     """Test running example_vtp_section.py if VTP file exists."""
-    vtp_file = "airfoil_sections.vtp"
+    vtp_file = "examples/airfoil_sections.vtp"
     if os.path.exists(vtp_file):
         result = subprocess.run(
             ["python", "examples/example_vtp_section.py"],
@@ -61,7 +61,7 @@ def test_example_vtp_section():
 
 def test_example_vtp_multi_section():
     """Test running example_vtp_multi_section.py if VTP file exists."""
-    vtp_file = "airfoil_sections.vtp"
+    vtp_file = "examples/airfoil_sections.vtp"
     if os.path.exists(vtp_file):
         result = subprocess.run(
             ["python", "examples/example_vtp_multi_section.py"],

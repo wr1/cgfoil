@@ -48,11 +48,11 @@ def test_models():
     assert skin.material == 2
     assert skin.sort_index == 1
 
-    web = Web(points=((0, 0), (1, 1)), plies=[ply], normal_ref=[0, 1], n_cell=10)
+    web = Web(points=[(0, 0), (1, 1)], plies=[ply], normal_ref=[0, 1], n_elem=10)
     assert web.points == [(0.0, 0.0), (1.0, 1.0)]
     assert len(web.plies) == 1
     assert web.normal_ref == [0, 1]
-    assert web.n_cell == 10
+    assert web.n_elem == 10
 
     mesh = AirfoilMesh(skins={"skin": skin}, webs={"web": web})
     assert "skin" in mesh.skins

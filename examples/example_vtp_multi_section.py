@@ -1,4 +1,4 @@
-"""Example demonstrating airfoil meshing from a VTP file with multi-section processing, parallelized using multiprocessing."""
+"""Example demonstrating airfoil meshing from a VTP file with multi-section processing."""
 
 import os
 import multiprocessing
@@ -77,7 +77,7 @@ def process_single_section(args):
         # Define webs
         web_definition = {
             "web1": Web(
-                airfoil_input=web_points_2d_1,
+                coord_input=web_points_2d_1,
                 plies=[
                     Ply(
                         thickness=Thickness(type="array", array=web_ply_thickness_1),
@@ -87,7 +87,7 @@ def process_single_section(args):
                 normal_ref=[1, 0],
             ),
             "web2": Web(
-                airfoil_input=web_points_2d_2,
+                coord_input=web_points_2d_2,
                 plies=[
                     Ply(
                         thickness=Thickness(type="array", array=web_ply_thickness_2),
@@ -119,7 +119,7 @@ def process_single_section(args):
 def process_vtp_multi_section(
     vtp_file: str, output_base_dir: str, num_processes: int = None
 ):
-    """Process VTP file for all unique section_ids, outputting to subdirectories, using multiprocessing."""
+    """Process VTP file for all unique section_ids, outputting to subdirectories."""
     # Load VTP file to get unique ids
     mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
 
@@ -144,6 +144,6 @@ def process_vtp_multi_section(
 
 # Example usage
 if __name__ == "__main__":
-    vtp_file = "airfoil_sections.vtp"  # Assume this file exists
+    vtp_file = "examples/airfoil_sections.vtp"  # Assume this file exists
     output_base_dir = "multi_section_output"
     process_vtp_multi_section(vtp_file, output_base_dir)

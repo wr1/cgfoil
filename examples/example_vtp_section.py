@@ -6,18 +6,21 @@ from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
 try:
     # Load VTP file containing multiple sections
-    vtp_file = "airfoil_sections.vtp"  # Assume this file exists with cell_data
+    vtp_file = "examples/airfoil_sections.vtp"  # Assume this file exists with cell_data
     # 'section_id' and 'panel_id'
     mesh_vtp = (
         pv.read(vtp_file).rotate_z(90)
     )
 
-    airfoil = mesh_vtp.threshold(value=(0, 12), scalars="panel_id")
+    # First get the section by threshold section_id==28
+    section_mesh = mesh_vtp.threshold(value=(28, 28), scalars="section_id")
 
-    te = mesh_vtp.threshold(value=(-3, -3), scalars="panel_id")
+    airfoil = section_mesh.threshold(value=(0, 12), scalars="panel_id")
 
-    web1 = mesh_vtp.threshold(value=(-1, -1), scalars="panel_id")
-    web2 = mesh_vtp.threshold(value=(-2, -2), scalars="panel_id")
+    te = section_mesh.threshold(value=(-3, -3), scalars="panel_id")
+
+    web1 = section_mesh.threshold(value=(-1, -1), scalars="panel_id")
+    web2 = section_mesh.threshold(value=(-2, -2), scalars="panel_id")
 
     # Extract points from the airfoil section
     points_2d = airfoil.points[:, :2].tolist()[:-1] + te.points[:, :2].tolist()[1:]
@@ -65,7 +68,7 @@ try:
     # Define webs
     web_definition = {
         "web1": Web(
-            airfoil_input=web_points_2d_1,  # List of (x, y) tuples for the web
+            coord_input=web_points_2d_1,  # List of (x, y) tuples for the web
             plies=[
                 Ply(
                     thickness=Thickness(type="array", array=web_ply_thickness_1), material=2
@@ -74,7 +77,7 @@ try:
             normal_ref=[1, 0],
         ),
         "web2": Web(
-            airfoil_input=web_points_2d_2,  # List of (x, y) tuples for the web
+            coord_input=web_points_2d_2,  # List of (x, y) tuples for the web
             plies=[
                     Ply(
                         thickness=Thickness(type="array", array=web_ply_thickness_2), material=3

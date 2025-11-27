@@ -3,15 +3,13 @@
 import numpy as np
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, AirfoilMesh, Thickness
+from cgfoil.models import Skin, Thickness, AirfoilMesh
 
 # Simplified skins and webs for demonstration
 skins = {
     "skin": Skin(
-        thickness=Thickness(type="constant", value=0.005),
-        material=1,
-        sort_index=1,
-    ),
+        thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1
+    )
 }
 
 web_definition = {}
@@ -21,7 +19,7 @@ print("Example 1: Loading airfoil from .dat file")
 mesh1 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
-    airfoil_input="naca0018.dat",  # Filename
+    airfoil_input="examples/naca0018.dat",  # Filename
     plot=False,  # Disable plotting for headless CI
     plot_filename=None,
     vtk="output1.vtk",
@@ -86,7 +84,7 @@ run_cgfoil(mesh3)
 print("Example 4: Converting .dat to VTK and using VTK file")
 # Load points from .dat
 points_2d = []
-with open("naca0018.dat", "r") as f:
+with open("examples/naca0018.dat", "r") as f:
     lines = f.readlines()
     for line in lines[1:]:  # Skip header
         parts = line.strip().split()
@@ -114,7 +112,7 @@ run_cgfoil(mesh4)
 print("Example 5: Using array thickness definition")
 # Load airfoil points to get the number of points
 airfoil_points = []
-with open("naca0018.dat", "r") as f:
+with open("examples/naca0018.dat", "r") as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
@@ -136,7 +134,7 @@ skins_array = {
 mesh5 = AirfoilMesh(
     skins=skins_array,
     webs=web_definition,
-    airfoil_input="naca0018.dat",
+    airfoil_input="examples/naca0018.dat",
     n_elem=None,  # Do not resample to match array length
     plot=False,  # Disable plotting for headless CI
     plot_filename=None,

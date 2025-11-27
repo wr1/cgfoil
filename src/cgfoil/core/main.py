@@ -133,18 +133,18 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     web_names = list(web_definition.keys())
     web_ply_thicknesses = []
     for web_name, web in web_definition.items():
-        if web.airfoil_input:
-            untrimmed_base_line = load_airfoil(web.airfoil_input, web.n_elem)
+        if web.coord_input:
+            untrimmed_base_line = load_airfoil(web.coord_input, web.n_elem)
         elif web.points:
             if len(web.points) == 2:
                 p1_coords, p2_coords = web.points
                 p1 = Point_2(*p1_coords)
                 p2 = Point_2(*p2_coords)
-                untrimmed_base_line = create_line_mesh(p1, p2, web.n_cell)
+                untrimmed_base_line = create_line_mesh(p1, p2, web.n_elem or 20)
             else:
                 untrimmed_base_line = [Point_2(*p) for p in web.points]
         else:
-            raise ValueError(f"Web {web_name} must have either points or airfoil_input")
+            raise ValueError(f"Web {web_name} must have either points or coord_input")
         untrimmed_lines.append(untrimmed_base_line)
         base_line = trim_line(
             untrimmed_base_line, inner_list[-1] if inner_list else outer_points
@@ -332,14 +332,14 @@ def run_cgfoil(mesh: AirfoilMesh):
     mesh_result = generate_mesh(mesh)
     logger.info(f"Cross-sectional areas: {mesh_result.areas}")
 
-    if mesh.vtk:
+    if mesh.vtk and mesh_result.faces:
         try:
             import pyvista as pv
         except ImportError:
             logger.warning("pyvista not available, cannot save VTK")
         else:
             mesh_obj = pv.UnstructuredGrid(
-                mesh_result.faces,
+                np.array(mesh_result.faces).flatten(),
                 [pv.CellType.TRIANGLE] * len(mesh_result.faces),
                 mesh_result.vertices,
             )
