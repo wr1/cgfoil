@@ -11,7 +11,12 @@ def get_material_id(
     web_material_ids,
     skin_material_ids,
 ):
-    """Determine the material ID, whether it's skin, and the layer index for a given centroid."""
+    """Determine the material ID, whether it's skin, and the layer index
+    for a given centroid."""
+    # First, ensure the centroid is inside the outer airfoil shape
+    if not point_in_polygon(centroid, outer_points):
+        return -1, False, -1
+
     in_hole = len(inner_list) > 0 and point_in_polygon(centroid, inner_list[-1])
     material_id = -1
     is_skin = False
@@ -22,23 +27,30 @@ def get_material_id(
                 if len(inner_list) == 0 or not point_in_polygon(
                     centroid, inner_list[0]
                 ):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
+                    elif not skin_material_ids:
+                        material_id = 2  # Fixed material ID if no skins
+                        is_skin = True
+                        layer_index = i
                     break
             elif i < len(inner_list):
                 if point_in_polygon(
                     centroid, inner_list[i - 1]
                 ) and not point_in_polygon(centroid, inner_list[i]):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
                     break
             else:
                 if point_in_polygon(centroid, inner_list[-1]):
-                    material_id = skin_material_ids[i]
-                    is_skin = True
-                    layer_index = i
+                    if skin_material_ids and i < len(skin_material_ids):
+                        material_id = skin_material_ids[i]
+                        is_skin = True
+                        layer_index = i
                     break
     if material_id == -1:
         for idx_ply, ply in enumerate(line_ply_list):
@@ -61,7 +73,8 @@ def compute_face_normals(
     ply_normals,
     outer_tangents,
 ):
-    """Compute normals, inplane vectors, and material IDs for each finite face in the triangulation."""
+    """Compute normals, inplane vectors, and material IDs for each finite face
+    in the triangulation."""
     face_normals = []
     face_inplanes = []
     face_material_ids = []

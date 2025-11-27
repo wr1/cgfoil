@@ -6,7 +6,8 @@ from cgfoil.utils.logger import logger
 
 
 def trim_self_intersecting_curve(points):
-    """Trim the curve to remove loose ends by keeping the closed loop between self-intersection points."""
+    """Trim the curve to remove loose ends by keeping the closed loop
+    between self-intersection points."""
     n = len(points)
     intersecting_indices = set()
     for i in range(n - 1):
@@ -17,12 +18,15 @@ def trim_self_intersecting_curve(points):
                 intersecting_indices.add(i)
                 intersecting_indices.add(j)
     logger.info(
-        f"Self intersecting indices: {intersecting_indices}, count: {len(intersecting_indices)}"
+        f"Self intersecting indices: {intersecting_indices}, "
+        f"count: {len(intersecting_indices)}"
     )
     if intersecting_indices:
         min_idx = min(intersecting_indices)
         max_idx = max(intersecting_indices)
-        return points[min_idx + 1 : max_idx + 1]
+        trimmed = points[min_idx + 1 : max_idx + 1]
+        logger.info(f"Trimmed curve from {len(points)} to {len(trimmed)} points")
+        return trimmed
     return points
 
 
@@ -39,6 +43,7 @@ def trim_line(points, inner_points):
                 inter = intersection(seg, inner_seg)
                 if inter.is_Point_2():
                     inter_points.append(inter.get_Point_2())
+    logger.info(f"Found {len(inter_points)} intersection points with inner boundary")
     if len(inter_points) >= 2:
         all_points = points + inter_points
         # Sort by distance from start
@@ -52,7 +57,13 @@ def trim_line(points, inner_points):
         if indices:
             min_idx = min(indices)
             max_idx = max(indices)
-            return all_points[min_idx : max_idx + 1]
+            trimmed = all_points[min_idx : max_idx + 1]
+            logger.info(
+                f"Trimmed line to {len(trimmed)} points between "
+                f"indices {min_idx} to {max_idx}"
+            )
+            return trimmed
+    logger.info("No trimming applied, returning original points")
     return points
 
 
@@ -60,24 +71,35 @@ def adjust_endpoints(points, distance):
     """Adjust endpoints to project out in line direction by distance."""
     if len(points) < 2:
         return points
-    # For start point, move backward along tangent
-    p0 = points[0]
-    p1 = points[1]
-    dx = p1.x() - p0.x()
-    dy = p1.y() - p0.y()
-    len_t = math.sqrt(dx**2 + dy**2)
-    if len_t > 0:
-        dx /= len_t
-        dy /= len_t
-        points[0] = Point_2(p0.x() - distance * dx, p0.y() - distance * dy)
-    # For end point, move forward along tangent
-    pn = points[-1]
-    pm = points[-2]
-    dx = pn.x() - pm.x()
-    dy = pn.y() - pm.y()
-    len_t = math.sqrt(dx**2 + dy**2)
-    if len_t > 0:
-        dx /= len_t
-        dy /= len_t
-        points[-1] = Point_2(pn.x() + distance * dx, pn.y() + distance * dy)
+    # Compute overall direction from start to end
+    p_start = points[0]
+    p_end = points[-1]
+    overall_dx = p_end.x() - p_start.x()
+    overall_dy = p_end.y() - p_start.y()
+    len_overall = math.sqrt(overall_dx**2 + overall_dy**2)
+    if len_overall > 0:
+        overall_dx /= len_overall
+        overall_dy /= len_overall
+        # For start point, move backward along overall direction
+        new_p0 = Point_2(
+            p_start.x() - distance * overall_dx,
+            p_start.y() - distance * overall_dy,
+        )
+        logger.info(
+            f"Adjusted start point from ({p_start.x():.4f}, {p_start.y():.4f}) "
+            f"to ({new_p0.x():.4f}, {new_p0.y():.4f}) along overall direction"
+        )
+        points[0] = new_p0
+        # For end point, move forward along overall direction
+        new_pn = Point_2(
+            p_end.x() + distance * overall_dx,
+            p_end.y() + distance * overall_dy,
+        )
+        logger.info(
+            f"Adjusted end point from ({p_end.x():.4f}, {p_end.y():.4f}) "
+            f"to ({new_pn.x():.4f}, {new_pn.y():.4f}) along overall direction"
+        )
+        points[-1] = new_pn
+    else:
+        logger.warning("Overall direction length is zero, no adjustment made")
     return points

@@ -1,7 +1,7 @@
 """Pydantic data models for cgfoil inputs."""
 
-from typing import Callable, Union, List, Tuple, Dict, Optional, Any
-from pydantic import BaseModel
+from typing import Union, List, Tuple, Dict, Optional, Any
+from pydantic import BaseModel, ConfigDict
 import numpy as np
 
 
@@ -15,21 +15,22 @@ class Thickness(BaseModel):
     y: Optional[List[float]] = None
     conditions: Optional[List[Dict[str, Any]]] = None
     else_value: Optional[float] = 0.0
+    array: Optional[List[float]] = None
 
-    def compute(self, x: List[float], ta: List[float], tr: List[float], xr: List[float]) -> List[float]:
+    def compute(self, coords: Dict[str, List[float]]) -> List[float]:
+        coord_vals = coords[self.coord]
         if self.type == "constant":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return [self.value] * len(coord_vals)
         elif self.type == "interp":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             return np.interp(coord_vals, self.x, self.y).tolist()
         elif self.type == "condition":
             result = []
-            for i in range(len(x)):
+            for i in range(len(coord_vals)):
                 satisfied = True
                 if self.conditions:
                     for cond in self.conditions:
-                        coord = {"x": x, "ta": ta, "tr": tr, "xr": xr}[cond["coord"]][i]
+                        coord_list = coords.get(cond["coord"], [])
+                        coord = coord_list[i] if i < len(coord_list) else 0.0
                         min_v, max_v = cond["range"]
                         if not (min_v <= coord <= max_v):
                             satisfied = False
@@ -37,7 +38,6 @@ class Thickness(BaseModel):
                 result.append(self.value if satisfied else self.else_value)
             return result
         elif self.type == "conditions":
-            coord_vals = {"x": x, "ta": ta, "tr": tr, "xr": xr}[self.coord]
             result = []
             for i, ci in enumerate(coord_vals):
                 val = self.else_value
@@ -52,6 +52,15 @@ class Thickness(BaseModel):
                             break
                 result.append(val)
             return result
+        elif self.type == "array":
+            if self.array is None:
+                raise ValueError("Array must be provided for thickness type 'array'")
+            if len(self.array) != len(coord_vals):
+                raise ValueError(
+                    f"Array length {len(self.array)} does not match "
+                    f"number of points {len(coord_vals)}"
+                )
+            return self.array
         else:
             raise ValueError(f"Unknown thickness type: {self.type}")
 
@@ -59,17 +68,20 @@ class Thickness(BaseModel):
 class Ply(BaseModel):
     """Model for a ply in a web."""
 
-    thickness: Union[float, Callable[[float], float]]
+    thickness: Thickness
     material: Union[int, str]
 
 
 class Web(BaseModel):
     """Model for a web definition."""
 
-    points: Tuple[Tuple[float, float], Tuple[float, float]]
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    points: Optional[List[Tuple[float, float]]] = None
+    coord_input: Optional[Union[str, List[Tuple[float, float]], np.ndarray]] = None
     plies: List[Ply]
     normal_ref: List[float] = [0, 0]
-    n_cell: int
+    n_elem: Optional[int] = None
 
 
 class Skin(BaseModel):
@@ -83,10 +95,12 @@ class Skin(BaseModel):
 class AirfoilMesh(BaseModel):
     """Model for defining an airfoil mesh."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     skins: Dict[str, Skin]
     webs: Dict[str, Web]
-    airfoil_filename: str = "naca0018.dat"
-    n_elem: int = 100
+    airfoil_input: Union[str, List[Tuple[float, float]], np.ndarray] = "naca0018.dat"
+    n_elem: Optional[int] = None
     plot: bool = False
     vtk: Optional[str] = None
     split_view: bool = False
@@ -97,6 +111,8 @@ class AirfoilMesh(BaseModel):
 
 class MeshResult(BaseModel):
     """Model for mesh generation results."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     vertices: List[List[float]]
     faces: List[List[int]]
@@ -112,3 +128,5 @@ class MeshResult(BaseModel):
     face_inplanes: List[Tuple[float, float]]
     areas: Dict[int, float]
     materials: Optional[List[Dict[str, Any]]] = None
+    skin_ply_thicknesses: List[List[float]]
+    web_ply_thicknesses: List[List[float]]

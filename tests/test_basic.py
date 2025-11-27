@@ -1,10 +1,7 @@
 """Basic tests for cgfoil."""
 
-import pytest
 import tempfile
 from unittest.mock import patch
-from pathlib import Path
-import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
@@ -26,23 +23,36 @@ def test_import():
 
 
 def test_models():
-    thickness = Thickness(type='constant', value=0.1)
-    assert thickness.compute([0.5], [0.5], [0.5], [0.5]) == [0.1]
+    thickness = Thickness(type="constant", value=0.1)
+    assert thickness.compute(
+        {"x": [0.5], "y": [0.5], "ta": [0.5], "tr": [0.5], "xr": [0.5]}
+    ) == [0.1]
 
-    ply = Ply(thickness=0.1, material=1)
-    assert ply.thickness == 0.1
+    thickness_array = Thickness(type="array", array=[0.1, 0.2, 0.3])
+    assert thickness_array.compute(
+        {
+            "x": [0.0, 0.5, 1.0],
+            "y": [0.0, 0.5, 1.0],
+            "ta": [0.0, 0.5, 1.0],
+            "tr": [0.0, 0.5, 1.0],
+            "xr": [0.0, 0.5, 1.0],
+        }
+    ) == [0.1, 0.2, 0.3]
+
+    ply = Ply(thickness=thickness, material=1)
+    assert ply.thickness.type == "constant"
     assert ply.material == 1
 
     skin = Skin(thickness=thickness, material=2, sort_index=1)
-    assert skin.thickness.type == 'constant'
+    assert skin.thickness.type == "constant"
     assert skin.material == 2
     assert skin.sort_index == 1
 
-    web = Web(points=((0, 0), (1, 1)), plies=[ply], normal_ref=[0, 1], n_cell=10)
-    assert web.points == ((0, 0), (1, 1))
+    web = Web(points=[(0, 0), (1, 1)], plies=[ply], normal_ref=[0, 1], n_elem=10)
+    assert web.points == [(0.0, 0.0), (1.0, 1.0)]
     assert len(web.plies) == 1
     assert web.normal_ref == [0, 1]
-    assert web.n_cell == 10
+    assert web.n_elem == 10
 
     mesh = AirfoilMesh(skins={"skin": skin}, webs={"web": web})
     assert "skin" in mesh.skins
@@ -85,6 +95,28 @@ def test_load_airfoil(tmp_path):
     file = tmp_path / "test.dat"
     file.write_text(dat_content)
     points = load_airfoil(str(file))
+    assert len(points) == 2
+    assert points[0].x() == 0.0
+    assert points[0].y() == 0.0
+    assert points[1].x() == 1.0
+    assert points[1].y() == 0.1
+
+
+def test_load_airfoil_list():
+    points_list = [(0.0, 0.0), (1.0, 0.1)]
+    points = load_airfoil(points_list)
+    assert len(points) == 2
+    assert points[0].x() == 0.0
+    assert points[0].y() == 0.0
+    assert points[1].x() == 1.0
+    assert points[1].y() == 0.1
+
+
+def test_load_airfoil_numpy():
+    import numpy as np
+
+    points_array = np.array([[0.0, 0.0], [1.0, 0.1]])
+    points = load_airfoil(points_array)
     assert len(points) == 2
     assert points[0].x() == 0.0
     assert points[0].y() == 0.0
@@ -149,8 +181,8 @@ def test_compute_cross_sectional_areas():
     assert 0 in areas
     assert areas[0] > 0
 
-@patch('matplotlib.pyplot.show')
-def test_plot_triangulation(mock_show):
+
+def test_plot_triangulation():
     cdt = Mesh_2_Constrained_Delaunay_triangulation_2()
     cdt.insert_constraint(Point_2(0, 0), Point_2(1, 0))
     cdt.insert_constraint(Point_2(1, 0), Point_2(0.5, 1))
@@ -179,6 +211,8 @@ def test_plot_triangulation(mock_show):
         v1 = vertex_map[face.vertex(1)]
         v2 = vertex_map[face.vertex(2)]
         faces.append([3, v0, v1, v2])
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        plot_filename = f.name
     plot_triangulation(
         vertices,
         faces,
@@ -193,48 +227,67 @@ def test_plot_triangulation(mock_show):
         face_material_ids,
         face_inplanes,
         split_view=False,
-        plot_filename=None,
+        plot_filename=plot_filename,
     )
-    mock_show.assert_called_once()
+    import os
 
-@patch('matplotlib.pyplot.show')
-def test_plot_mesh(mock_show):
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
+    assert os.path.exists(plot_filename)
+    os.unlink(plot_filename)
+
+
+def test_plot_mesh():
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
-    thickness = Thickness(type='constant', value=0.01)
-    skins = {
-        "skin": Skin(thickness=thickness, material=1, sort_index=1)
-    }
+    thickness = Thickness(type="constant", value=0.01)
+    skins = {"skin": Skin(thickness=thickness, material=1, sort_index=1)}
     web_definition = {}
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        airfoil_filename=fname,
+        airfoil_input=fname,
         plot=True,
         plot_filename=None,
-        split_view=False
+        split_view=False,
     )
     mesh_result = generate_mesh(mesh)
-    plot_mesh(mesh_result, None, False)
-    mock_show.assert_called_once()
+    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
+        plot_filename = f.name
+    plot_mesh(mesh_result, plot_filename, False)
+    import os
 
-@patch('matplotlib.pyplot.savefig')
+    assert os.path.exists(plot_filename)
+    os.unlink(plot_filename)
+
+
+@patch("matplotlib.pyplot.savefig")
 def test_run_cgfoil(mock_savefig):
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.dat', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
         f.write("1\n\n0.0 0.0\n1.0 0.1\n")
         fname = f.name
-    thickness = Thickness(type='constant', value=0.01)
-    skins = {
-        "skin": Skin(thickness=thickness, material=1, sort_index=1)
-    }
+    thickness = Thickness(type="constant", value=0.01)
+    skins = {"skin": Skin(thickness=thickness, material=1, sort_index=1)}
     web_definition = {}
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        airfoil_filename=fname,
+        airfoil_input=fname,
         plot=True,
-        plot_filename='test.png'
+        plot_filename="test.png",
     )
     run_cgfoil(mesh)
-    mock_savefig.assert_called_once_with('test.png')
+    mock_savefig.assert_called_once_with("test.png")
+
+
+def test_run_examples():
+    """Test running a simple example."""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".dat", delete=False) as f:
+        f.write("1\n\n0.0 0.0\n1.0 0.1\n")
+        fname = f.name
+    skins = {
+        "skin": Skin(
+            thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1
+        )
+    }
+    mesh = AirfoilMesh(skins=skins, webs={}, airfoil_input=fname, plot=False, vtk=None)
+    run_cgfoil(mesh)

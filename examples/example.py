@@ -1,6 +1,5 @@
 """Programmatic example for cgfoil."""
 
-import numpy as np
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
@@ -58,49 +57,56 @@ skins = {
 }
 
 # Define custom web definition
+# Note: Multiple plies can share the same material
 web_definition = {
     "web1": Web(
-        points=((0.25, -0.1), (0.25, 0.1)),
+        coord_input=[(0.25, -0.1), (0.25, 0.1)],
         plies=[
-            Ply(thickness=0.004, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.004), material=5),
             Ply(
-                thickness=lambda y: np.interp(
-                    y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
+                thickness=Thickness(
+                    type="interp",
+                    coord="y",
+                    x=[-0.04, -0.03, 0.03, 0.04],
+                    y=[0, 0.01, 0.01, 0],
                 ),
                 material=3,
             ),
-            Ply(thickness=0.004, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.004), material=5),
         ],
         normal_ref=[1, 0],
-        n_cell=20,
+        n_elem=20,
     ),
     "web2": Web(
-        points=((0.4, -0.1), (0.4, 0.1)),
+        coord_input=[(0.4, -0.1), (0.4, 0.1)],
         plies=[
-            Ply(thickness=0.004, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.004), material=5),
             Ply(
-                thickness=lambda y: np.interp(
-                    y, [-0.04, -0.03, 0.03, 0.04], [0, 0.01, 0.01, 0]
+                thickness=Thickness(
+                    type="interp",
+                    coord="y",
+                    x=[-0.04, -0.03, 0.03, 0.04],
+                    y=[0, 0.01, 0.01, 0],
                 ),
                 material=3,
             ),
-            Ply(thickness=0.004, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.004), material=5),
         ],
         normal_ref=[-1, 0],
-        n_cell=15,
+        n_elem=15,
     ),
     "web3": Web(
-        points=((0.775, -0.1), (0.775, 0.1)),
+        coord_input=[(0.775, -0.1), (0.775, 0.1)],
         plies=[
-            Ply(thickness=0.005, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.005), material=5),
             Ply(
-                thickness=0.005,
+                thickness=Thickness(type="constant", value=0.005),
                 material=3,
             ),
-            Ply(thickness=0.005, material=5),
+            Ply(thickness=Thickness(type="constant", value=0.005), material=5),
         ],
         normal_ref=[-1, 0],
-        n_cell=15,
+        n_elem=15,
     ),
 }
 
@@ -108,8 +114,8 @@ web_definition = {
 mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
-    airfoil_filename="naca0018.dat",
-    plot=True,
+    airfoil_input="examples/naca0018.dat",
+    plot=False,  # Disable plotting for headless CI
     vtk="output.vtk",
     scale_factor=1.05,
     split_view=True,

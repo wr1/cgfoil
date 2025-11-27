@@ -1,6 +1,7 @@
 """Example demonstrating loading an airfoil mesh from YAML and validating with Pydantic.
 
-The YAML demonstrates tapers (interp), conditions with multiple coordinates, remeshing with n_elem.
+The YAML demonstrates tapers (interp), conditions with multiple coordinates,
+remeshing with n_elem.
 """
 
 import yaml
@@ -14,6 +15,7 @@ with open(yaml_file, "r") as f:
     data = yaml.safe_load(f)
 
 # Validate and create AirfoilMesh model
+data["plot"] = False  # Disable plotting for headless CI
 mesh = AirfoilMesh(**data)
 
 # Run the meshing
