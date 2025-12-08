@@ -1,19 +1,26 @@
 """Example demonstrating airfoil meshing from a VTP file with section isolation."""
 
+import argparse
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
+parser = argparse.ArgumentParser(description="Process VTP file for airfoil meshing.")
+parser.add_argument(
+    "--vtp-file", default="examples/airfoil_sections.vtp", help="Path to the VTP file"
+)
+parser.add_argument("--section-id", type=int, default=28, help="Section ID threshold")
+args = parser.parse_args()
+
 try:
     # Load VTP file containing multiple sections
-    vtp_file = "examples/airfoil_sections.vtp"  # Assume this file exists with cell_data
-    # 'section_id' and 'panel_id'
-    mesh_vtp = (
-        pv.read(vtp_file).rotate_z(90)
-    )
+    vtp_file = args.vtp_file
+    mesh_vtp = pv.read(vtp_file).rotate_z(90)
 
-    # First get the section by threshold section_id==28
-    section_mesh = mesh_vtp.threshold(value=(28, 28), scalars="section_id")
+    # First get the section by threshold section_id==args.section_id
+    section_mesh = mesh_vtp.threshold(
+        value=(args.section_id, args.section_id), scalars="section_id"
+    )
 
     airfoil = section_mesh.threshold(value=(0, 12), scalars="panel_id")
 
@@ -46,7 +53,8 @@ try:
             + 0.04
         )[:-1]
         + list(
-            te.cell_data_to_point_data().point_data["ply_000001_plate_100_thickness"] * 1
+            te.cell_data_to_point_data().point_data["ply_000001_plate_100_thickness"]
+            * 1
             + 0.04
         )[1:]
     )
@@ -71,7 +79,8 @@ try:
             coord_input=web_points_2d_1,  # List of (x, y) tuples for the web
             plies=[
                 Ply(
-                    thickness=Thickness(type="array", array=web_ply_thickness_1), material=2
+                    thickness=Thickness(type="array", array=web_ply_thickness_1),
+                    material=2,
                 ),
             ],
             normal_ref=[1, 0],
@@ -79,9 +88,10 @@ try:
         "web2": Web(
             coord_input=web_points_2d_2,  # List of (x, y) tuples for the web
             plies=[
-                    Ply(
-                        thickness=Thickness(type="array", array=web_ply_thickness_2), material=3
-                    ),
+                Ply(
+                    thickness=Thickness(type="array", array=web_ply_thickness_2),
+                    material=3,
+                ),
             ],
             normal_ref=[-1, 0],
         ),
@@ -104,4 +114,5 @@ try:
 except Exception as e:
     print(f"Error in example_vtp_section: {e}")
     import sys
+
     sys.exit(1)
