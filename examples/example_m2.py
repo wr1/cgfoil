@@ -1,4 +1,5 @@
-"""Merged example with TE logic from vtp_section and generalized ply logic from vtp_multi_ply."""
+"""Merged example with TE logic from vtp_section and generalized
+ply logic from vtp_multi_ply."""
 
 import argparse
 import pyvista as pv
@@ -56,7 +57,8 @@ def sort_points_by_y(mesh: pv.PolyData) -> pv.PolyData:
     return mesh
 
 
-# Select airfoil including TE: panel_id >= 0 (selects the airfoil) or panel_id == min(panel_id) (selects TE)
+# Select airfoil including TE: panel_id >= 0 (selects the airfoil) or
+# panel_id == min(panel_id) (selects TE)
 min_panel_id = section_mesh.cell_data["panel_id"].min()
 airfoil = pv.merge(
     [

@@ -27,7 +27,9 @@ web_points_loaded = web_mesh_loaded.points[:, :2].tolist()
 
 # Define thickness arrays for the web points
 thickness_array1 = [0.004] * len(web_points_loaded)  # Constant for outer layers
-thickness_array2 = [0.008 + 0.002 * abs(y) for x, y in web_points_loaded]  # Varying for core
+thickness_array2 = [
+    0.008 + 0.002 * abs(y) for x, y in web_points_loaded
+]  # Varying for core
 thickness_array3 = [0.004] * len(web_points_loaded)  # Constant for inner layer
 
 # Define skins

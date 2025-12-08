@@ -108,9 +108,7 @@ def save_mesh_to_vtk(mesh_result, mesh, vtk_file):
                     key=lambda j: (mesh_result.outer_points[j][0] - cx) ** 2
                     + (mesh_result.outer_points[j][1] - cy) ** 2,
                 )
-                thicknesses.append(
-                    mesh_result.skin_ply_thicknesses[ply_idx][closest_i]
-                )
+                thicknesses.append(mesh_result.skin_ply_thicknesses[ply_idx][closest_i])
             else:
                 thicknesses.append(0.0)
         mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
@@ -121,11 +119,10 @@ def save_mesh_to_vtk(mesh_result, mesh, vtk_file):
                 # Find closest on the untrimmed_line for that web
                 cumulative = 0
                 web_idx = 0
-                ply_in_web = 0
                 for w_idx, web in enumerate(mesh.webs.values()):
                     if ply_idx < cumulative + len(web.plies):
                         web_idx = w_idx
-                        ply_in_web = ply_idx - cumulative
+                        ply_idx - cumulative
                         break
                     cumulative += len(web.plies)
                 untrimmed = mesh_result.untrimmed_lines[web_idx]
@@ -140,9 +137,7 @@ def save_mesh_to_vtk(mesh_result, mesh, vtk_file):
                     key=lambda j: (untrimmed[j][0] - cx) ** 2
                     + (untrimmed[j][1] - cy) ** 2,
                 )
-                thicknesses.append(
-                    mesh_result.web_ply_thicknesses[ply_idx][closest_i]
-                )
+                thicknesses.append(mesh_result.web_ply_thicknesses[ply_idx][closest_i])
             else:
                 thicknesses.append(0.0)
         mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses

@@ -1,4 +1,4 @@
-"""Example demonstrating airfoil meshing from a VTP file with multi-section processing."""
+"""Demonstrates airfoil meshing from a VTP file with multi-section processing."""
 
 import os
 import multiprocessing

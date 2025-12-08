@@ -206,7 +206,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     outer_tangents = []
     for i in range(n):
         prev = outer_points[(i - 1) % n]
-        curr = outer_points[i]
+        outer_points[i]
         next_p = outer_points[(i + 1) % n]
         tx = (next_p.x() - prev.x()) / 2
         ty = (next_p.y() - prev.y()) / 2
