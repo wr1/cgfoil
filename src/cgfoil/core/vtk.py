@@ -64,11 +64,10 @@ def build_vtk_mesh(mesh_result, mesh=None):
                     # Find closest on the untrimmed_line for that web
                     cumulative = 0
                     web_idx = 0
-                    ply_local_idx = 0
                     for w_idx, web in enumerate(mesh.webs.values()):
                         if ply_idx < cumulative + len(web.plies):
                             web_idx = w_idx
-                            ply_local_idx = ply_idx - cumulative
+                            ply_idx - cumulative
                             break
                         cumulative += len(web.plies)
                     untrimmed = mesh_result.untrimmed_lines[web_idx]
