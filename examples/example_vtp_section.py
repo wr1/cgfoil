@@ -1,19 +1,24 @@
 """Example demonstrating airfoil meshing from a VTP file with section isolation."""
 
+import argparse
 import pyvista as pv
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
 
+parser = argparse.ArgumentParser(description="Process VTP file for airfoil meshing.")
+parser.add_argument('--vtp-file', default='examples/airfoil_sections.vtp', help='Path to the VTP file')
+parser.add_argument('--section-id', type=int, default=28, help='Section ID threshold')
+args = parser.parse_args()
+
 try:
     # Load VTP file containing multiple sections
-    vtp_file = "examples/airfoil_sections.vtp"  # Assume this file exists with cell_data
-    # 'section_id' and 'panel_id'
+    vtp_file = args.vtp_file
     mesh_vtp = (
         pv.read(vtp_file).rotate_z(90)
     )
 
-    # First get the section by threshold section_id==28
-    section_mesh = mesh_vtp.threshold(value=(28, 28), scalars="section_id")
+    # First get the section by threshold section_id==args.section_id
+    section_mesh = mesh_vtp.threshold(value=(args.section_id, args.section_id), scalars="section_id")
 
     airfoil = section_mesh.threshold(value=(0, 12), scalars="panel_id")
 
