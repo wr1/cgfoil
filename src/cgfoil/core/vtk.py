@@ -53,7 +53,9 @@ def build_vtk_mesh(mesh_result, mesh=None):
                         key=lambda j: (mesh_result.outer_points[j][0] - cx) ** 2
                         + (mesh_result.outer_points[j][1] - cy) ** 2,
                     )
-                    thicknesses.append(mesh_result.skin_ply_thicknesses[ply_idx][closest_i])
+                    thicknesses.append(
+                        mesh_result.skin_ply_thicknesses[ply_idx][closest_i]
+                    )
                 else:
                     thicknesses.append(0.0)
             mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
@@ -82,7 +84,9 @@ def build_vtk_mesh(mesh_result, mesh=None):
                         key=lambda j: (untrimmed[j][0] - cx) ** 2
                         + (untrimmed[j][1] - cy) ** 2,
                     )
-                    thicknesses.append(mesh_result.web_ply_thicknesses[ply_idx][closest_i])
+                    thicknesses.append(
+                        mesh_result.web_ply_thicknesses[ply_idx][closest_i]
+                    )
                 else:
                     thicknesses.append(0.0)
             mesh_obj.cell_data[f"ply_{ply_idx}_thickness"] = thicknesses
