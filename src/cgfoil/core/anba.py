@@ -31,7 +31,7 @@ def build_anba_data(mesh_result):
                 matlibrary.append(
                     {
                         "type": "isotropic",
-                        "e": mat["e"],
+                        "E": mat["E"],
                         "nu": mat["nu"],
                         "rho": mat["rho"],
                     }
@@ -42,7 +42,7 @@ def build_anba_data(mesh_result):
         matlibrary = [
             {
                 "type": "isotropic",
-                "e": 98000000.0,
+                "E": 98000000.0,
                 "nu": 0.3,
                 "rho": 7850.0,
             }
@@ -58,13 +58,11 @@ def build_anba_data(mesh_result):
     scaling_constraint = 1.0
     singular = False
     data = {
-        "mesh": {
-            "points": points,
-            "cells": cells,
-        },
+        "points": points,
+        "cells": cells,
         "degree": degree,
-        "matlibrary": matlibrary,
-        "materials": material_ids,
+        "mat_library": matlibrary,
+        "material_ids": material_ids,
         "fiber_orientations": fiber_orientations,
         "plane_orientations": plane_orientations,
         "scaling_constraint": scaling_constraint,
