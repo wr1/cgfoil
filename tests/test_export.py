@@ -66,26 +66,26 @@ def test_export_anba_fields(mesh_result_fixture):
     export_mesh_to_anba(os.path.join(tmpdir, "mesh.pck"), anba_file)
     with open(anba_file) as f:
         data = json.load(f)
-    assert "mesh" in data
-    assert "points" in data["mesh"]
-    assert "cells" in data["mesh"]
+    # assert "mesh" in data
+    assert "points" in data
+    assert "cells" in data
     assert "degree" in data
-    assert "matlibrary" in data
-    assert "materials" in data
+    assert "mat_library" in data
+    assert "material_ids" in data
     assert "fiber_orientations" in data
     assert "plane_orientations" in data
     assert "scaling_constraint" in data
     assert "singular" in data
-    n_cells = len(data["mesh"]["cells"])
-    assert len(data["materials"]) == n_cells
+    n_cells = len(data["cells"])
+    assert len(data["material_ids"]) == n_cells
     assert len(data["fiber_orientations"]) == n_cells
     assert len(data["plane_orientations"]) == n_cells
-    assert len(data["mesh"]["points"]) == len(mesh_result.vertices)
+    assert len(data["points"]) == len(mesh_result.vertices)
     # Check that points are 2D
-    for p in data["mesh"]["points"]:
+    for p in data["points"]:
         assert len(p) == 2
     # Check material library fields
-    for mat in data["matlibrary"]:
+    for mat in data["mat_library"]:
         if mat["type"] == "orthotropic":
             required_keys = [
                 "type",
