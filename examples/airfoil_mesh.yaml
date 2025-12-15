@@ -101,27 +101,27 @@ vtk: output.vtk
 materials:
 - name: cap
   type: isotropic
-  e: 98000000.0
+  E: 98000000.0
   nu: 0.3
   rho: 7850.0
 - name: core
   type: isotropic
-  e: 98000000.0
+  E: 98000000.0
   nu: 0.3
   rho: 7850.0
 - name: skin
   type: isotropic
-  e: 98000000.0
+  E: 98000000.0
   nu: 0.3
   rho: 7850.0
 - name: te_ud
   type: isotropic
-  e: 98000000.0
+  E: 98000000.0
   nu: 0.3
   rho: 7850.0
 - name: web
   type: isotropic
-  e: 98000000.0
+  E: 98000000.0
   nu: 0.3
   rho: 7850.0
 scale_factor: 1.0

@@ -102,7 +102,7 @@ def test_export_anba_fields(mesh_result_fixture):
             ]
             assert all(key in mat for key in required_keys)
         elif mat["type"] == "isotropic":
-            required_keys = ["type", "e", "nu", "rho"]
+            required_keys = ["type", "E", "nu", "rho"]
             assert all(key in mat for key in required_keys)
 
 
