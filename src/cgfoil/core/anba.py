@@ -17,15 +17,15 @@ def build_anba_data(mesh_result, matdb=None):
                 if mat['type'] == 'orthotropic':
                     matlibrary.append({
                         'type': 'orthotropic',
-                        'E1': mat['e_xx'],
-                        'E2': mat['e_yy'],
-                        'E3': mat['e_zz'],
-                        'G12': mat['g_xy'],
-                        'G13': mat['g_xz'],
-                        'G23': mat['g_yz'],
-                        'nu12': mat['nu_xy'],
-                        'nu13': mat['nu_zx'],
-                        'nu23': mat['nu_zy'],
+                        'E1': mat['E1'],
+                        'E2': mat['E2'],
+                        'E3': mat['E3'],
+                        'G12': mat['G12'],
+                        'G13': mat['G13'],
+                        'G23': mat['G23'],
+                        'nu12': mat['nu12'],
+                        'nu13': mat['nu13'],
+                        'nu23': mat['nu23'],
                         'rho': mat['rho'],
                     })
                 elif mat['type'] == 'isotropic':
