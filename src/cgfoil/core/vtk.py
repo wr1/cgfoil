@@ -32,4 +32,6 @@ def build_vtk_mesh(mesh_result, mesh=None):
     mesh_obj.cell_data["offset_normals"] = np.array(
         [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals]
     )
+    # Compute cell sizes using pyvista
+    mesh_obj.compute_cell_sizes()
     return mesh_obj

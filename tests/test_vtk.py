@@ -1,5 +1,6 @@
 """Tests for VTK export functionality."""
 
+import sys
 import pytest
 import numpy as np
 from unittest.mock import patch, MagicMock
@@ -78,7 +79,15 @@ def test_build_vtk_mesh_with_mesh():
 
 def test_build_vtk_mesh_pyvista_not_available():
     """Test that ImportError is raised when pyvista is not available."""
-    with patch.dict('sys.modules', {'pyvista': None}):
+    if 'pyvista' in sys.modules:
+        del sys.modules['pyvista']
+
+    def mock_import(name, *args, **kwargs):
+        if name == 'pyvista':
+            raise ImportError("No module named 'pyvista'")
+        return __import__(name, *args, **kwargs)
+
+    with patch('builtins.__import__', mock_import):
         with pytest.raises(ImportError, match="pyvista not available"):
             mesh_result = MeshResult(
                 vertices=[[0, 0, 0], [1, 0, 0], [0, 1, 0]],
@@ -89,13 +98,13 @@ def test_build_vtk_mesh_pyvista_not_available():
                 untrimmed_lines=[],
                 web_material_ids=[],
                 skin_material_ids=[1],
-        web_names=[],
-        face_normals=[(0, 0)],
-        face_material_ids=[1],
-        face_inplanes=[(0, 0)],
-        areas={1: 0.5},
-        materials=None,
-        skin_ply_thicknesses=[],
-        web_ply_thicknesses=[],
-    )
-    build_vtk_mesh(mesh_result)
+                web_names=[],
+                face_normals=[(0, 0)],
+                face_material_ids=[1],
+                face_inplanes=[(0, 0)],
+                areas={1: 0.5},
+                materials=None,
+                skin_ply_thicknesses=[],
+                web_ply_thicknesses=[],
+            )
+            build_vtk_mesh(mesh_result)
