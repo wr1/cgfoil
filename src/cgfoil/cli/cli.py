@@ -34,6 +34,12 @@ mesh_cmd = command(
             arg_type=str,
             help="Output mesh file (pickle)",
         ),
+        option(
+            flags=["--vtk"],
+            dest="vtk_file",
+            arg_type=str,
+            help="Output VTK file",
+        ),
     ],
     sort_key=1,
 )
@@ -110,6 +116,12 @@ anba_cmd = command(
             dest="anba_file",
             arg_type=str,
             help="Output ANBA file",
+        ),
+        option(
+            flags=["--matdb"],
+            arg_type=str,
+            help="Path to material database JSON",
+            default=None,
         ),
     ],
 )

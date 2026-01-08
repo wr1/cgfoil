@@ -63,6 +63,7 @@ def _resample_points(points, n_elem):
 def save_mesh_to_vtk(mesh_result, mesh, vtk_file):
     """Save mesh result to VTK file."""
     from cgfoil.core.vtk import build_vtk_mesh
+
     mesh_obj = build_vtk_mesh(mesh_result, mesh)
     mesh_obj.save(vtk_file)
     logger.info(f"Mesh saved to {vtk_file}")

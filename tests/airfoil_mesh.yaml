@@ -100,7 +100,7 @@ materials:
     rho: 1900.0
   - name: pvc_foam_120
     type: isotropic
-    e: 120000000.0
+    E: 120000000.0
     nu: 0.3
     rho: 120.0
   - name: biax_glass_fiber

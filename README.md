@@ -1,3 +1,4 @@
+[![Test](https://github.com/wr1/cgfoil/actions/workflows/ci.yml/badge.svg)](https://github.com/wr1/cgfoil/actions/workflows/ci.yml)![Version](https://img.shields.io/github/v/release/wr1/cgfoil)
 # cgfoil
 
 A CGAL-based airfoil meshing tool for generating constrained Delaunay triangulations of airfoils with plies and webs.
