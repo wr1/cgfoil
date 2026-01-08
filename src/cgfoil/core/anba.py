@@ -10,39 +10,45 @@ def build_anba_data(mesh_result, matdb=None):
     degree = 2
     if matdb:
         matlibrary = []
-        max_id = max(mat['id'] for mat in matdb.values()) if matdb else 0
+        max_id = max(mat["id"] for mat in matdb.values()) if matdb else 0
         for i in range(max_id + 1):
-            mat = next((m for m in matdb.values() if m['id'] == i), None)
+            mat = next((m for m in matdb.values() if m["id"] == i), None)
             if mat:
-                if mat['type'] == 'orthotropic':
-                    matlibrary.append({
-                        'type': 'orthotropic',
-                        'E1': mat['E1'],
-                        'E2': mat['E2'],
-                        'E3': mat['E3'],
-                        'G12': mat['G12'],
-                        'G13': mat['G13'],
-                        'G23': mat['G23'],
-                        'nu12': mat['nu12'],
-                        'nu13': mat['nu13'],
-                        'nu23': mat['nu23'],
-                        'rho': mat['rho'],
-                    })
-                elif mat['type'] == 'isotropic':
-                    matlibrary.append({
-                        'type': 'isotropic',
-                        'E': mat['E'],
-                        'nu': mat['nu'],
-                        'rho': mat['rho'],
-                    })
+                if mat["type"] == "orthotropic":
+                    matlibrary.append(
+                        {
+                            "type": "orthotropic",
+                            "E1": mat["E1"],
+                            "E2": mat["E2"],
+                            "E3": mat["E3"],
+                            "G12": mat["G12"],
+                            "G13": mat["G13"],
+                            "G23": mat["G23"],
+                            "nu12": mat["nu12"],
+                            "nu13": mat["nu13"],
+                            "nu23": mat["nu23"],
+                            "rho": mat["rho"],
+                        }
+                    )
+                elif mat["type"] == "isotropic":
+                    matlibrary.append(
+                        {
+                            "type": "isotropic",
+                            "E": mat["E"],
+                            "nu": mat["nu"],
+                            "rho": mat["rho"],
+                        }
+                    )
             else:
                 # Default isotropic if missing
-                matlibrary.append({
-                    'type': 'isotropic',
-                    'E': 98000000.0,
-                    'nu': 0.3,
-                    'rho': 7850.0,
-                })
+                matlibrary.append(
+                    {
+                        "type": "isotropic",
+                        "E": 98000000.0,
+                        "nu": 0.3,
+                        "rho": 7850.0,
+                    }
+                )
     else:
         unique_materials = sorted(set(mesh_result.face_material_ids))
         max_id = max(unique_materials) if unique_materials else 0
