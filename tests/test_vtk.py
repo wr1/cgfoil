@@ -81,9 +81,6 @@ def test_build_vtk_mesh_with_mesh():
 
 def test_build_vtk_mesh_pyvista_not_available():
     """Test that ImportError is raised when pyvista is not available."""
-    if 'pyvista' in sys.modules:
-        del sys.modules['pyvista']
-
     def mock_import(name, *args, **kwargs):
         if name == 'pyvista':
             raise ImportError("No module named 'pyvista'")
