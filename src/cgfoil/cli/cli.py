@@ -36,6 +36,7 @@ mesh_cmd = command(
         ),
         option(
             flags=["--vtk"],
+            dest="vtk_file",
             arg_type=str,
             help="Output VTK file",
         ),
