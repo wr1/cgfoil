@@ -33,5 +33,5 @@ def build_vtk_mesh(mesh_result, mesh=None):
         [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals]
     )
     # Compute cell sizes using pyvista
-    mesh_obj.compute_cell_sizes()
+    mesh_obj = mesh_obj.compute_cell_sizes()
     return mesh_obj

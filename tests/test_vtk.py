@@ -36,6 +36,7 @@ def test_build_vtk_mesh_without_mesh():
     assert "inplane" in vtk_mesh.cell_data
     assert "plane_orientations" in vtk_mesh.cell_data
     assert "offset_normals" in vtk_mesh.cell_data
+    assert "Area" in vtk_mesh.cell_data
 
 
 def test_build_vtk_mesh_with_mesh():
@@ -65,6 +66,7 @@ def test_build_vtk_mesh_with_mesh():
     mock_mesh_obj = MagicMock()
     mock_pv.UnstructuredGrid.return_value = mock_mesh_obj
     mock_mesh_obj.cell_data = {}
+    mock_mesh_obj.compute_cell_sizes.return_value = mock_mesh_obj
 
     with patch.dict("sys.modules", {"pyvista": mock_pv, "numpy": mock_np}):
         result = build_vtk_mesh(mesh_result, mesh)
