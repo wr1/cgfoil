@@ -104,9 +104,10 @@ try:
         # webs={},
         airfoil_input=points_2d,  # List of (x, y) tuples
         n_elem=None,  # Keep input spacing, do not resample
-        plot=False,  # Disable plotting for headless CI
-        plot_filename=None,
+        plot=True,
+        plot_filename="example_vtp_section.png",
         vtk="output_vtp_section.vtk",
+        split_view=True,
     )
 
     # Run the meshing

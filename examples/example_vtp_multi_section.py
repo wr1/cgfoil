@@ -104,9 +104,10 @@ def process_single_section(args):
             webs=web_definition,
             airfoil_input=points_2d,
             n_elem=None,
-            plot=False,  # Disable plotting in parallel to avoid issues
-            plot_filename=None,
+            plot=True,
+            plot_filename=os.path.join(section_dir, "plot.png"),
             vtk=os.path.join(section_dir, "output.vtk"),
+            split_view=True,
         )
 
         # Run the meshing

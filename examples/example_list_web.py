@@ -57,9 +57,10 @@ mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="examples/naca0018.dat",
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_list_web.png",
     vtk="output_web.vtk",
+    split_view=True,
 )
 
 # Run the meshing

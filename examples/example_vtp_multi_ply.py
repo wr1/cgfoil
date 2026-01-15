@@ -16,8 +16,7 @@ parser.add_argument("--section-id", type=int, default=28, help="Section ID thres
 args = parser.parse_args()
 
 # Load VTP file containing multiple sections
-vtp_file = args.vtp_file  # Assume this file exists with cell_data
-# 'section_id', 'panel_id', and cell_data for thicknesses
+vtp_file = args.vtp_file
 mesh_vtp = (
     pv.read(vtp_file)
     .threshold(value=(args.section_id, args.section_id), scalars="section_id")
@@ -37,7 +36,6 @@ web_points_2d_1 = web1.points[:, :2].tolist()
 web_points_2d_2 = web2.points[:, :2].tolist()
 
 # Function to get thickness arrays from mesh
-
 
 def get_thickness_arrays(mesh):
     """Get all thickness arrays from mesh cell_data matching ply_*_thickness."""
@@ -99,9 +97,10 @@ mesh = AirfoilMesh(
     webs=web_definition,
     airfoil_input=points_2d,  # List of (x, y) tuples
     n_elem=None,  # Keep input spacing, do not resample
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_vtp_multi_ply.png",
     vtk="output_vtp_multi_ply.vtk",
+    split_view=True,
 )
 
 # Run the meshing

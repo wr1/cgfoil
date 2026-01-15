@@ -4,53 +4,32 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cgfoil"
-version = "0.1.2"
-description = "CGAL-based airfoil meshing tool"
-authors = [{name = "wr1", email = "8971152+wr1@users.noreply.github.com"}]
+version = "0.1.0"
+description = "CGAL-based airfoil meshing package"
+authors = [{name = "Your Name", email = "your.email@example.com"}]
 readme = "README.md"
-license = {text = "MIT"}
 requires-python = ">=3.8"
-keywords = ["airfoil", "meshing", "cgal", "delaunay"]
-classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering",
-]
 dependencies = [
-    "matplotlib",
     "numpy",
+    "scipy",
+    "matplotlib",
     "pydantic",
     "pyvista",
-    "CGAL",
     "rich",
     "treeparse",
-    "scipy",
     "pandas",
+    "pyyaml",
 ]
-scripts = { "cgfoil" = "cgfoil.cli.cli:main" }
 
-[project.optional-dependencies]
-dev = ["pytest-cov"]
-
-[project.urls]
-Homepage = "https://github.com/wr1/cgfoil"
-Repository = "https://github.com/wr1/cgfoil"
+[project.scripts]
+cgfoil = "cgfoil.cli.cli:main"
 
 [tool.ruff]
 line-length = 88
+target-version = "py38"
 
 [tool.ruff.lint]
-select = ["E", "F", "W"]
-ignore = []
+select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA", "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "FLY", "NPY", "AIR", "PERF", "FURB", "LOG", "RUF"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src"]
-addopts = "--cov=cgfoil --cov-report=term-missing"
