@@ -1,7 +1,7 @@
 """Programmatic example for cgfoil."""
 
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 # Define custom skins (shell definitions)
 skins = {

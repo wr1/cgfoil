@@ -1,10 +1,13 @@
 """Main execution logic for cgfoil."""
 
+from __future__ import annotations
+
 import math
+
 import numpy as np
-from typing import Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
+
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
@@ -46,9 +49,12 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             if name not in name_to_id:
                 missing.append(f"'{name}'")
         if missing:
-            raise ValueError(
+            msg = (
                 "The following materials are not defined in the materials "
                 f"database: {', '.join(missing)}"
+            )
+            raise ValueError(
+                msg,
             )
     else:
         name_to_id = {}
@@ -144,10 +150,12 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             else:
                 untrimmed_base_line = [Point_2(*p) for p in web.points]
         else:
-            raise ValueError(f"Web {web_name} must have either points or coord_input")
+            msg = f"Web {web_name} must have either points or coord_input"
+            raise ValueError(msg)
         untrimmed_lines.append(untrimmed_base_line)
         base_line = trim_line(
-            untrimmed_base_line, inner_list[-1] if inner_list else outer_points
+            untrimmed_base_line,
+            inner_list[-1] if inner_list else outer_points,
         )
         base_line = adjust_endpoints(base_line, protrusion_distance)
         current_line = base_line
@@ -160,10 +168,13 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             thickness_list = ply.thickness.compute(coords_web)
             web_ply_thicknesses.append(thickness_list)
             untrimmed_offset_line = offset_airfoil(
-                current_untrimmed, thickness_list, normal_ref
+                current_untrimmed,
+                thickness_list,
+                normal_ref,
             )
             offset_line = trim_line(
-                untrimmed_offset_line, inner_list[-1] if inner_list else outer_points
+                untrimmed_offset_line,
+                inner_list[-1] if inner_list else outer_points,
             )
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
@@ -185,14 +196,16 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Insert outer boundary as constraints
     for i in range(len(outer_points)):
         cdt.insert_constraint(
-            outer_points[i], outer_points[(i + 1) % len(outer_points)]
+            outer_points[i],
+            outer_points[(i + 1) % len(outer_points)],
         )
 
     # Insert inner boundaries as constraints
     for inner_points in inner_list:
         for i in range(len(inner_points)):
             cdt.insert_constraint(
-                inner_points[i], inner_points[(i + 1) % len(inner_points)]
+                inner_points[i],
+                inner_points[(i + 1) % len(inner_points)],
             )
 
     # Insert line plies as constraints
@@ -298,7 +311,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
 
 def plot_mesh(
     mesh_result: MeshResult,
-    plot_filename: Optional[str] = None,
+    plot_filename: str | None = None,
     split_view: bool = False,
 ):
     # Convert back to Point_2 for plotting

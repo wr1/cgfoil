@@ -1,20 +1,22 @@
 """Full pipeline command functionality."""
 
-import pickle
-import yaml
 import os
+import pickle
+
+import yaml
+
+from cgfoil.cli.export import export_mesh_to_anba, export_mesh_to_vtk
+from cgfoil.cli.plot import plot_existing_mesh
+from cgfoil.cli.summary import summarize_mesh
 from cgfoil.core.main import generate_mesh
 from cgfoil.models import AirfoilMesh
-from cgfoil.cli.plot import plot_existing_mesh
-from cgfoil.cli.export import export_mesh_to_vtk, export_mesh_to_anba
-from cgfoil.cli.summary import summarize_mesh
 from cgfoil.utils.logger import logger
 
 
 def full_mesh(yaml_file: str, output_dir: str):
     """Run full meshing pipeline."""
     os.makedirs(output_dir, exist_ok=True)
-    with open(yaml_file, "r") as f:
+    with open(yaml_file) as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh_result = generate_mesh(mesh)

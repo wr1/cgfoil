@@ -1,7 +1,7 @@
 """Programmatic example demonstrating airfoil meshing with webs."""
 
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 # Define skins
 skins = {
@@ -19,7 +19,7 @@ skins = {
 
 # Load airfoil points to find points at x=0.3
 airfoil_points = []
-with open("examples/naca0018.dat", "r") as f:
+with open("examples/naca0018.dat") as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
@@ -50,7 +50,6 @@ if upper_point and lower_point:
     }
 else:
     web_definition = {}
-    print("Warning: Could not find points at x=0.3")
 
 # Create AirfoilMesh
 mesh = AirfoilMesh(

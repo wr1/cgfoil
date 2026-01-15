@@ -1,8 +1,10 @@
 """Plotting utilities."""
 
-import matplotlib.pyplot as plt
 import math
 from collections import defaultdict
+
+import matplotlib.pyplot as plt
+
 from cgfoil.utils.logger import logger
 
 
@@ -82,17 +84,14 @@ def plot_triangulation(
         for idx, inner_points in enumerate(inner_list):
             xs = [p.x() for p in inner_points] + [inner_points[0].x()]
             ys = [p.y() + offset_y for p in inner_points] + [
-                inner_points[0].y() + offset_y
+                inner_points[0].y() + offset_y,
             ]
             plt.plot(xs, ys, colors[idx % len(colors)], linewidth=2)
 
         for idx, ply_points in enumerate(line_ply_list):
             xs = [p.x() for p in ply_points] + [ply_points[0].x()]
             ys = [p.y() + offset_y for p in ply_points] + [ply_points[0].y() + offset_y]
-            if max_id == 0:
-                color = cmap(0)
-            else:
-                color = cmap(web_material_ids[idx] / max_id)
+            color = cmap(0) if max_id == 0 else cmap(web_material_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
         # Plot untrimmed lines at +offset_y
@@ -128,10 +127,7 @@ def plot_triangulation(
             cy = (p0[1] + p1[1] + p2[1]) / 3.0
             xs = [p0[0], p1[0], p2[0]]
             ys = [p0[1], p1[1], p2[1]]
-            if max_id == 0:
-                color = cmap(0)
-            else:
-                color = cmap(material_id / max_id)
+            color = cmap(0) if max_id == 0 else cmap(material_id / max_id)
             plt.fill(xs, ys, color=color, alpha=0.5)
             centroids.append((cx, cy))
             normals.append(face_normals[idx])
@@ -171,10 +167,7 @@ def plot_triangulation(
         for idx, ply_points in enumerate(line_ply_list):
             xs = [p.x() for p in ply_points] + [ply_points[0].x()]
             ys = [p.y() for p in ply_points] + [ply_points[0].y()]
-            if max_id == 0:
-                color = cmap(0)
-            else:
-                color = cmap(web_material_ids[idx] / max_id)
+            color = cmap(0) if max_id == 0 else cmap(web_material_ids[idx] / max_id)
             plt.plot(xs, ys, color=color, linewidth=2)
 
     # Add dashed axvline at position of maximum thickness
@@ -217,7 +210,7 @@ def plot_triangulation(
         ha="center",
         va="bottom",
         fontsize=10,
-        bbox=dict(boxstyle="round,pad=0.3", facecolor="white", alpha=0.8),
+        bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "alpha": 0.8},
     )
 
     # Add colorbar

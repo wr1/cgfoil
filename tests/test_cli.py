@@ -1,27 +1,35 @@
 """CLI tests for cgfoil."""
 
-import subprocess
 import os
-import tempfile
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
+
 import yaml
 
 
 def test_cli_help():
-    result = subprocess.run(["cgfoil", "--help"], capture_output=True, text=True)
+    result = subprocess.run(
+        ["cgfoil", "--help"], check=False, capture_output=True, text=True
+    )
     assert result.returncode == 0
     assert "CGAL-based airfoil meshing tool" in result.stdout
 
 
 def test_cli_invalid_command():
-    result = subprocess.run(["cgfoil", "invalid"], capture_output=True, text=True)
+    result = subprocess.run(
+        ["cgfoil", "invalid"], check=False, capture_output=True, text=True
+    )
     assert result.returncode != 0
 
 
 def test_cli_mesh_help():
     result = subprocess.run(
-        ["cgfoil", "mesh", "--help"], capture_output=True, text=True
+        ["cgfoil", "mesh", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
     assert "Generate mesh from YAML file" in result.stdout
@@ -32,7 +40,7 @@ def test_cli_mesh():
         yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
         yaml_dst = Path(tmpdir) / "test.yaml"
         shutil.copy(yaml_src, yaml_dst)
-        with open(yaml_dst, "r") as f:
+        with open(yaml_dst) as f:
             data = yaml.safe_load(f)
         data["airfoil_input"] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, "w") as f:
@@ -43,6 +51,7 @@ def test_cli_mesh():
         out_file = Path(tmpdir) / "mesh.pkl"
         result = subprocess.run(
             ["cgfoil", "mesh", str(yaml_dst), "-o", str(out_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -56,7 +65,7 @@ def test_cli_plot():
         yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
         yaml_dst = Path(tmpdir) / "test.yaml"
         shutil.copy(yaml_src, yaml_dst)
-        with open(yaml_dst, "r") as f:
+        with open(yaml_dst) as f:
             data = yaml.safe_load(f)
         data["airfoil_input"] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, "w") as f:
@@ -67,6 +76,7 @@ def test_cli_plot():
         mesh_file = Path(tmpdir) / "mesh.pkl"
         result_mesh = subprocess.run(
             ["cgfoil", "mesh", str(yaml_dst), "-o", str(mesh_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -75,6 +85,7 @@ def test_cli_plot():
         plot_file = Path(tmpdir) / "plot.png"
         result_plot = subprocess.run(
             ["cgfoil", "plot", str(mesh_file), "-f", str(plot_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -88,7 +99,7 @@ def test_cli_export_vtk():
         yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
         yaml_dst = Path(tmpdir) / "test.yaml"
         shutil.copy(yaml_src, yaml_dst)
-        with open(yaml_dst, "r") as f:
+        with open(yaml_dst) as f:
             data = yaml.safe_load(f)
         data["airfoil_input"] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, "w") as f:
@@ -99,6 +110,7 @@ def test_cli_export_vtk():
         mesh_file = Path(tmpdir) / "mesh.pkl"
         result_mesh = subprocess.run(
             ["cgfoil", "mesh", str(yaml_dst), "-o", str(mesh_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -107,6 +119,7 @@ def test_cli_export_vtk():
         vtk_file = Path(tmpdir) / "mesh.vtk"
         result_export = subprocess.run(
             ["cgfoil", "export", "vtk", str(mesh_file), str(vtk_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -120,7 +133,7 @@ def test_cli_export_anba():
         yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
         yaml_dst = Path(tmpdir) / "test.yaml"
         shutil.copy(yaml_src, yaml_dst)
-        with open(yaml_dst, "r") as f:
+        with open(yaml_dst) as f:
             data = yaml.safe_load(f)
         data["airfoil_input"] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, "w") as f:
@@ -131,6 +144,7 @@ def test_cli_export_anba():
         mesh_file = Path(tmpdir) / "mesh.pkl"
         result_mesh = subprocess.run(
             ["cgfoil", "mesh", str(yaml_dst), "-o", str(mesh_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -139,6 +153,7 @@ def test_cli_export_anba():
         anba_file = Path(tmpdir) / "mesh.json"
         result_export = subprocess.run(
             ["cgfoil", "export", "anba", str(mesh_file), str(anba_file)],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -152,7 +167,7 @@ def test_cli_full():
         yaml_src = Path(__file__).parent / "airfoil_mesh.yaml"
         yaml_dst = Path(tmpdir) / "airfoil_mesh.yaml"
         shutil.copy(yaml_src, yaml_dst)
-        with open(yaml_dst, "r") as f:
+        with open(yaml_dst) as f:
             data = yaml.safe_load(f)
         data["airfoil_input"] = str(Path(tmpdir) / "naca0018.dat")
         with open(yaml_dst, "w") as f:
@@ -162,7 +177,10 @@ def test_cli_full():
         naca_dst = Path(tmpdir) / "naca0018.dat"
         shutil.copy(naca_src, naca_dst)
         result = subprocess.run(
-            ["cgfoil", "full", str(yaml_dst), tmpdir], capture_output=True, text=True
+            ["cgfoil", "full", str(yaml_dst), tmpdir],
+            check=False,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
         assert os.path.exists(os.path.join(tmpdir, "mesh.pck"))
@@ -174,6 +192,9 @@ def test_cli_full():
 
 def test_cli_full_invalid_yaml():
     result = subprocess.run(
-        ["cgfoil", "full", "nonexistent.yaml", "/tmp"], capture_output=True, text=True
+        ["cgfoil", "full", "nonexistent.yaml", "/tmp"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode != 0

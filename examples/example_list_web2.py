@@ -3,8 +3,9 @@ and array thickness."""
 
 import numpy as np
 import pyvista as pv
+
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 # Create a VTK file for the web
 # Define web points at x=0.3
@@ -19,7 +20,6 @@ points_3d = np.array([[x, y, 0.0] for x, y in web_points])
 lines = np.hstack([[len(points_3d)], np.arange(len(points_3d))])
 web_mesh = pv.PolyData(points_3d, lines=lines)
 web_mesh.save("web.vtk")
-print("Saved web to web.vtk")
 
 # Load points from saved VTK
 web_mesh_loaded = pv.read("web.vtk")

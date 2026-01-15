@@ -2,8 +2,9 @@
 
 import json
 import pickle
-from ..core.anba import build_anba_data
-from ..utils.io import save_mesh_to_vtk
+
+from cgfoil.core.anba import build_anba_data
+from cgfoil.utils.io import save_mesh_to_vtk
 
 
 def export_mesh_to_vtk(mesh_file: str, vtk_file: str) -> None:
@@ -18,7 +19,7 @@ def export_mesh_to_anba(mesh_file: str, anba_file: str, matdb=None) -> None:
     with open(mesh_file, "rb") as f:
         mesh_result = pickle.load(f)
     if isinstance(matdb, str):
-        with open(matdb, "r") as f:
+        with open(matdb) as f:
             matdb = json.load(f)
     data = build_anba_data(mesh_result, matdb)
     with open(anba_file, "w") as f:

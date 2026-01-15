@@ -1,11 +1,11 @@
 """Tests for VTK export functionality."""
 
-import sys
+from unittest.mock import MagicMock, patch
+
 import pytest
-import numpy as np
-from unittest.mock import patch, MagicMock
+
 from cgfoil.core.vtk import build_vtk_mesh
-from cgfoil.models import AirfoilMesh, MeshResult
+from cgfoil.models import MeshResult
 
 
 def test_build_vtk_mesh_without_mesh():
@@ -81,12 +81,14 @@ def test_build_vtk_mesh_with_mesh():
 
 def test_build_vtk_mesh_pyvista_not_available():
     """Test that ImportError is raised when pyvista is not available."""
+
     def mock_import(name, *args, **kwargs):
-        if name == 'pyvista':
-            raise ImportError("No module named 'pyvista'")
+        if name == "pyvista":
+            msg = "No module named 'pyvista'"
+            raise ImportError(msg)
         return __import__(name, *args, **kwargs)
 
-    with patch('builtins.__import__', mock_import):
+    with patch("builtins.__import__", mock_import):
         with pytest.raises(ImportError, match="pyvista not available"):
             mesh_result = MeshResult(
                 vertices=[[0, 0, 0], [1, 0, 0], [0, 1, 0]],

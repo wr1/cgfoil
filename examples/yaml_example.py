@@ -4,14 +4,16 @@ The YAML demonstrates tapers (interp), conditions with multiple coordinates,
 remeshing with n_elem.
 """
 
-import yaml
 from pathlib import Path
+
+import yaml
+
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import AirfoilMesh
 
 # Load YAML configuration
 yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-with open(yaml_file, "r") as f:
+with open(yaml_file) as f:
     data = yaml.safe_load(f)
 
 # Validate and create AirfoilMesh model

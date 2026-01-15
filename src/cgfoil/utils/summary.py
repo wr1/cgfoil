@@ -1,9 +1,9 @@
 """Summarizing utilities."""
 
-from typing import Dict
+from __future__ import annotations
 
 
-def compute_cross_sectional_areas(cdt, face_material_ids) -> Dict[int, float]:
+def compute_cross_sectional_areas(cdt, face_material_ids) -> dict[int, float]:
     """Compute total cross-sectional area for each material ID."""
     areas = {}
     idx = 0

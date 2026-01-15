@@ -1,14 +1,18 @@
 """Tests for running programmatic examples."""
 
-import subprocess
 import os
+import subprocess
+
 import pytest
 
 
 def test_example():
     """Test running example.py."""
     result = subprocess.run(
-        ["python", "examples/example.py"], capture_output=True, text=True
+        ["python", "examples/example.py"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
 
@@ -16,7 +20,10 @@ def test_example():
 def test_example_list():
     """Test running example_list.py."""
     result = subprocess.run(
-        ["python", "examples/example_list.py"], capture_output=True, text=True
+        ["python", "examples/example_list.py"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
 
@@ -24,7 +31,10 @@ def test_example_list():
 def test_yaml_example():
     """Test running yaml_example.py."""
     result = subprocess.run(
-        ["python", "examples/yaml_example.py"], capture_output=True, text=True
+        ["python", "examples/yaml_example.py"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
 
@@ -32,7 +42,10 @@ def test_yaml_example():
 def test_example_list_web():
     """Test running example_list_web.py."""
     result = subprocess.run(
-        ["python", "examples/example_list_web.py"], capture_output=True, text=True
+        ["python", "examples/example_list_web.py"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
 
@@ -40,7 +53,10 @@ def test_example_list_web():
 def test_example_list_web2():
     """Test running example_list_web2.py."""
     result = subprocess.run(
-        ["python", "examples/example_list_web2.py"], capture_output=True, text=True
+        ["python", "examples/example_list_web2.py"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
 
@@ -51,6 +67,7 @@ def test_example_vtp_section():
     if os.path.exists(vtp_file):
         result = subprocess.run(
             ["python", "examples/example_vtp_section.py"],
+            check=False,
             capture_output=True,
             text=True,
         )
@@ -65,6 +82,7 @@ def test_example_vtp_multi_section():
     if os.path.exists(vtp_file):
         result = subprocess.run(
             ["python", "examples/example_vtp_multi_section.py"],
+            check=False,
             capture_output=True,
             text=True,
         )

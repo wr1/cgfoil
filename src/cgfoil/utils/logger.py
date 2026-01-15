@@ -1,17 +1,20 @@
 """Logger configuration with rich formatting."""
 
-from rich.logging import RichHandler
-from rich.console import Console
 import logging
 import sys
+
+from rich.console import Console
+from rich.logging import RichHandler
 
 logging.basicConfig(
     level="INFO",
     format="%(message)s",
     handlers=[
         RichHandler(
-            rich_tracebacks=True, console=Console(file=sys.stdout), show_time=False
-        )
+            rich_tracebacks=True,
+            console=Console(file=sys.stdout),
+            show_time=False,
+        ),
     ],
 )
 
