@@ -231,10 +231,10 @@ def test_plot_triangulation():
         split_view=False,
         plot_filename=plot_filename,
     )
-    import os
+    from pathlib import Path
 
-    assert os.path.exists(plot_filename)
-    os.unlink(plot_filename)
+    assert Path(plot_filename).exists()
+    Path(plot_filename).unlink()
 
 
 def test_plot_mesh():
@@ -256,10 +256,10 @@ def test_plot_mesh():
     with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as f:
         plot_filename = f.name
     plot_mesh(mesh_result, plot_filename, False)
-    import os
+    from pathlib import Path
 
-    assert os.path.exists(plot_filename)
-    os.unlink(plot_filename)
+    assert Path(plot_filename).exists()
+    Path(plot_filename).unlink()
 
 
 @patch("matplotlib.pyplot.savefig")
