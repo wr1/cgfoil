@@ -1,6 +1,5 @@
 """CLI tests for cgfoil."""
 
-import os
 import shutil
 import subprocess
 import tempfile
@@ -189,11 +188,11 @@ def test_cli_full():
             text=True,
         )
         assert result.returncode == 0
-        assert os.path.exists(os.path.join(tmpdir, "mesh.pck"))
-        assert os.path.exists(os.path.join(tmpdir, "plot.png"))
-        assert os.path.exists(os.path.join(tmpdir, "mesh.vtk"))
-        assert os.path.exists(os.path.join(tmpdir, "mesh.json"))
-        assert os.path.exists(os.path.join(tmpdir, "summary.csv"))
+        assert (Path(tmpdir) / "mesh.pck").exists()
+        assert (Path(tmpdir) / "plot.png").exists()
+        assert (Path(tmpdir) / "mesh.vtk").exists()
+        assert (Path(tmpdir) / "mesh.json").exists()
+        assert (Path(tmpdir) / "summary.csv").exists()
 
 
 def test_cli_full_invalid_yaml():
