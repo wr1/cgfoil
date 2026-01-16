@@ -44,7 +44,7 @@ def test_build_vtk_mesh_with_mesh():
                 thickness=Thickness(type="constant", value=0.005),
                 material=1,
                 sort_index=1,
-            )
+            ),
         },
         webs={},
         airfoil_input=[(0, 0), (1, 0), (0, 1)],

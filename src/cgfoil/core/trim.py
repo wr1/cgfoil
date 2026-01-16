@@ -53,7 +53,7 @@ def trim_line(points, inner_points):
         start = points[0]
         all_points.sort(
             key=lambda p: math.sqrt(
-                (p.x() - start.x()) ** 2 + (p.y() - start.y()) ** 2
+                (p.x() - start.x()) ** 2 + (p.y() - start.y()) ** 2,
             ),
         )
         # Find indices of inter_points in sorted list
