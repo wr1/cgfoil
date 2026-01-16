@@ -1,33 +1,40 @@
 """Programmatic example demonstrating different airfoil input types for cgfoil."""
 
+from pathlib import Path
+
 import numpy as np
 import pyvista as pv
+
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Thickness, AirfoilMesh
+from cgfoil.models import AirfoilMesh, Skin, Thickness
+
+NUM_PARTS = 2
 
 # Simplified skins and webs for demonstration
 skins = {
     "skin": Skin(
-        thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1
-    )
+        thickness=Thickness(type="constant", value=0.005),
+        material=1,
+        sort_index=1,
+    ),
 }
 
 web_definition = {}
 
 # Example 1: Using a filename (string)
-print("Example 1: Loading airfoil from .dat file")
 mesh1 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="examples/naca0018.dat",  # Filename
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    n_elem=50,  # Resample to 50 elements
+    plot=True,
+    plot_filename="example_list_1.png",
     vtk="output1.vtk",
+    split_view=True,
 )
 run_cgfoil(mesh1)
 
 # Example 2: Using a list of tuples
-print("Example 2: Providing airfoil points as a list of tuples")
 airfoil_points_list = [
     (0.0, 0.0),
     (0.1, 0.01),
@@ -46,14 +53,14 @@ mesh2 = AirfoilMesh(
     webs=web_definition,
     airfoil_input=airfoil_points_list,  # List of (x, y) tuples
     n_elem=50,  # Resample to 50 elements
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_list_2.png",
     vtk="output2.vtk",
+    split_view=True,
 )
 run_cgfoil(mesh2)
 
 # Example 3: Using a NumPy array
-print("Example 3: Providing airfoil points as a NumPy array")
 airfoil_points_array = np.array(
     [
         [0.0, 0.0],
@@ -67,28 +74,28 @@ airfoil_points_array = np.array(
         [0.8, 0.02],
         [0.9, 0.01],
         [1.0, 0.0],
-    ]
+    ],
 )  # NumPy array of shape (n, 2)
 mesh3 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input=airfoil_points_array,  # NumPy array
     n_elem=50,  # Resample to 50 elements
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_list_3.png",
     vtk="output3.vtk",
+    split_view=True,
 )
 run_cgfoil(mesh3)
 
 # Example 4: Using a VTK file created from .dat
-print("Example 4: Converting .dat to VTK and using VTK file")
 # Load points from .dat
 points_2d = []
-with open("examples/naca0018.dat", "r") as f:
+with Path("examples/naca0018.dat").open() as f:
     lines = f.readlines()
     for line in lines[1:]:  # Skip header
         parts = line.strip().split()
-        if len(parts) == 2:
+        if len(parts) == NUM_PARTS:
             x = float(parts[0])
             y = float(parts[1])
             points_2d.append([x, y])
@@ -97,26 +104,25 @@ points_3d = np.array([[x, y, 0.0] for x, y in points_2d])
 lines = np.hstack([[len(points_3d)], np.arange(len(points_3d))])
 mesh_vtk = pv.PolyData(points_3d, lines=lines)
 mesh_vtk.save("airfoil.vtk")
-print("Saved airfoil to airfoil.vtk")
 mesh4 = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="airfoil.vtk",  # VTK filename
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_list_4.png",
     vtk="output4.vtk",
+    split_view=True,
 )
 run_cgfoil(mesh4)
 
 # Example 5: Using array thickness definition
-print("Example 5: Using array thickness definition")
 # Load airfoil points to get the number of points
 airfoil_points = []
-with open("examples/naca0018.dat", "r") as f:
+with Path("examples/naca0018.dat").open() as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
-        if len(parts) == 2:
+        if len(parts) == NUM_PARTS:
             x = float(parts[0])
             y = float(parts[1])
             airfoil_points.append((x, y))
@@ -136,9 +142,10 @@ mesh5 = AirfoilMesh(
     webs=web_definition,
     airfoil_input="examples/naca0018.dat",
     n_elem=None,  # Do not resample to match array length
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_list_5.png",
     vtk="output5.vtk",
+    split_view=True,
 )
 run_cgfoil(mesh5)
 

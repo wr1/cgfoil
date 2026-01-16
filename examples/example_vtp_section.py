@@ -1,13 +1,17 @@
 """Example demonstrating airfoil meshing from a VTP file with section isolation."""
 
 import argparse
+
 import pyvista as pv
+
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 parser = argparse.ArgumentParser(description="Process VTP file for airfoil meshing.")
 parser.add_argument(
-    "--vtp-file", default="examples/airfoil_sections.vtp", help="Path to the VTP file"
+    "--vtp-file",
+    default="examples/airfoil_sections.vtp",
+    help="Path to the VTP file",
 )
 parser.add_argument("--section-id", type=int, default=28, help="Section ID threshold")
 args = parser.parse_args()
@@ -19,7 +23,8 @@ try:
 
     # First get the section by threshold section_id==args.section_id
     section_mesh = mesh_vtp.threshold(
-        value=(args.section_id, args.section_id), scalars="section_id"
+        value=(args.section_id, args.section_id),
+        scalars="section_id",
     )
 
     airfoil = section_mesh.threshold(value=(0, 12), scalars="panel_id")
@@ -38,7 +43,8 @@ try:
     web_points_2d_2 = web2.points[:, :2].tolist()
 
     if not points_2d:
-        raise ValueError("No airfoil points extracted from VTP file")
+        msg = "No airfoil points extracted from VTP file"
+        raise ValueError(msg)
 
     # Get thickness from VTP
     # preserve this particular numbering/indexing, the scaling is arbitrary
@@ -50,16 +56,14 @@ try:
                 ]
                 * 0.01
             )
-            + 0.04
+            + 0.04,
         )[:-1]
         + list(
             te.cell_data_to_point_data().point_data["ply_000001_plate_100_thickness"]
             * 1
-            + 0.04
+            + 0.04,
         )[1:]
     )
-
-    print(len(ply_000001_plate_100_thickness), len(points_2d))
 
     web_ply_thickness_1 = [0.004] * len(web_points_2d_1)
     web_ply_thickness_2 = [0.004] * len(web_points_2d_2)
@@ -101,18 +105,17 @@ try:
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        # webs={},
         airfoil_input=points_2d,  # List of (x, y) tuples
         n_elem=None,  # Keep input spacing, do not resample
-        plot=False,  # Disable plotting for headless CI
-        plot_filename=None,
+        plot=True,
+        plot_filename="example_vtp_section.png",
         vtk="output_vtp_section.vtk",
+        split_view=True,
     )
 
     # Run the meshing
     run_cgfoil(mesh)
-except Exception as e:
-    print(f"Error in example_vtp_section: {e}")
+except Exception:
     import sys
 
     sys.exit(1)

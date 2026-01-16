@@ -2,14 +2,16 @@
 
 import tempfile
 from unittest.mock import patch
+
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-from cgfoil.core.main import run_cgfoil, generate_mesh, plot_mesh
+
+from cgfoil.core.main import generate_mesh, plot_mesh, run_cgfoil
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
 from cgfoil.core.trim import adjust_endpoints, trim_self_intersecting_curve
-from cgfoil.models import Ply, Skin, Web, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 from cgfoil.utils.geometry import point_in_polygon
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.plot import plot_triangulation
@@ -25,7 +27,7 @@ def test_import():
 def test_models():
     thickness = Thickness(type="constant", value=0.1)
     assert thickness.compute(
-        {"x": [0.5], "y": [0.5], "ta": [0.5], "tr": [0.5], "xr": [0.5]}
+        {"x": [0.5], "y": [0.5], "ta": [0.5], "tr": [0.5], "xr": [0.5]},
     ) == [0.1]
 
     thickness_array = Thickness(type="array", array=[0.1, 0.2, 0.3])
@@ -36,7 +38,7 @@ def test_models():
             "ta": [0.0, 0.5, 1.0],
             "tr": [0.0, 0.5, 1.0],
             "xr": [0.0, 0.5, 1.0],
-        }
+        },
     ) == [0.1, 0.2, 0.3]
 
     ply = Ply(thickness=thickness, material=1)
@@ -286,8 +288,10 @@ def test_run_examples():
         fname = f.name
     skins = {
         "skin": Skin(
-            thickness=Thickness(type="constant", value=0.005), material=1, sort_index=1
-        )
+            thickness=Thickness(type="constant", value=0.005),
+            material=1,
+            sort_index=1,
+        ),
     }
     mesh = AirfoilMesh(skins=skins, webs={}, airfoil_input=fname, plot=False, vtk=None)
     run_cgfoil(mesh)

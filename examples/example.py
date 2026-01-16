@@ -1,7 +1,7 @@
 """Programmatic example for cgfoil."""
 
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 # Define custom skins (shell definitions)
 skins = {
@@ -115,7 +115,8 @@ mesh = AirfoilMesh(
     skins=skins,
     webs=web_definition,
     airfoil_input="examples/naca0018.dat",
-    plot=False,  # Disable plotting for headless CI
+    plot=True,
+    plot_filename="example.png",
     vtk="output.vtk",
     scale_factor=1.05,
     split_view=True,
@@ -123,7 +124,3 @@ mesh = AirfoilMesh(
 
 # Run the meshing
 run_cgfoil(mesh)
-
-# Alternatively, generate mesh separately
-# mesh_result = generate_mesh(mesh)
-# plot_mesh(mesh_result)

@@ -1,23 +1,26 @@
 """Example demonstrating airfoil meshing from a VTP file with multiple plies."""
 
 import argparse
-import pyvista as pv
 import re
+
+import pyvista as pv
+
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 parser = argparse.ArgumentParser(
-    description="Process VTP file for multi-ply airfoil meshing."
+    description="Process VTP file for multi-ply airfoil meshing.",
 )
 parser.add_argument(
-    "--vtp-file", default="examples/airfoil_sections.vtp", help="Path to the VTP file"
+    "--vtp-file",
+    default="examples/airfoil_sections.vtp",
+    help="Path to the VTP file",
 )
 parser.add_argument("--section-id", type=int, default=28, help="Section ID threshold")
 args = parser.parse_args()
 
 # Load VTP file containing multiple sections
-vtp_file = args.vtp_file  # Assume this file exists with cell_data
-# 'section_id', 'panel_id', and cell_data for thicknesses
+vtp_file = args.vtp_file
 mesh_vtp = (
     pv.read(vtp_file)
     .threshold(value=(args.section_id, args.section_id), scalars="section_id")
@@ -44,9 +47,8 @@ def get_thickness_arrays(mesh):
     # Convert cell data to point data
     mesh_point = mesh.cell_data_to_point_data()
     thickness_keys = [
-        k for k in mesh_point.point_data.keys() if re.match(r"ply_.*_thickness", k)
+        k for k in mesh_point.point_data if re.match(r"ply_.*_thickness", k)
     ]
-    print(f"Found thickness keys: {thickness_keys}")
     # Sort by the number in the name, assuming ply_XXXX_...
     thickness_keys.sort(key=lambda x: int(re.search(r"ply_(\d+)", x).group(1)))
     return {k: mesh_point.point_data[k] for k in thickness_keys}
@@ -62,7 +64,7 @@ web2_thicknesses = get_thickness_arrays(web2)
 # Define skins (multiple layers from airfoil thicknesses)
 skins = {}
 material_id = 1
-for i, (key, thickness_array) in enumerate(airfoil_thicknesses.items(), start=1):
+for i, (_key, thickness_array) in enumerate(airfoil_thicknesses.items(), start=1):
     skins[f"skin{i}"] = Skin(
         thickness=Thickness(type="array", array=thickness_array),
         material=material_id,
@@ -78,12 +80,12 @@ web_meshes = [
 ]
 for web_name, thicknesses, points in web_meshes:
     plies = []
-    for key, thickness_array in thicknesses.items():
+    for thickness_array in thicknesses.values():
         plies.append(
             Ply(
                 thickness=Thickness(type="array", array=thickness_array),
                 material=material_id,
-            )
+            ),
         )
         material_id += 1
     normal_ref = [1, 0] if web_name == "web1" else [-1, 0]
@@ -99,9 +101,10 @@ mesh = AirfoilMesh(
     webs=web_definition,
     airfoil_input=points_2d,  # List of (x, y) tuples
     n_elem=None,  # Keep input spacing, do not resample
-    plot=False,  # Disable plotting for headless CI
-    plot_filename=None,
+    plot=True,
+    plot_filename="example_vtp_multi_ply.png",
     vtk="output_vtp_multi_ply.vtk",
+    split_view=True,
 )
 
 # Run the meshing

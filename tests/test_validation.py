@@ -1,14 +1,16 @@
 """Validation tests for cgfoil."""
 
 from pathlib import Path
+
 import yaml
+
 from cgfoil.core.main import generate_mesh
 from cgfoil.models import AirfoilMesh
 
 
 def test_example_case_areas():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, "r") as f:
+    with open(yaml_file) as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
@@ -20,7 +22,7 @@ def test_example_case_areas():
 
 def test_example_case_masses():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, "r") as f:
+    with open(yaml_file) as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
@@ -41,16 +43,16 @@ def test_example_case_masses():
 
 def test_example_case_web_normals():
     yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-    with open(yaml_file, "r") as f:
+    with open(yaml_file) as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
     mesh_result = generate_mesh(mesh)
     web_names = list(mesh.webs.keys())
-    for web_idx, (web_name, web) in enumerate(mesh.webs.items()):
+    for web_idx, (_web_name, web) in enumerate(mesh.webs.items()):
         normal_ref = web.normal_ref
         start = sum(len(mesh.webs[w].plies) for w in web_names[:web_idx])
-        for i, ply in enumerate(web.plies):
+        for i, _ply in enumerate(web.plies):
             mat = mesh_result.web_material_ids[start + i]
             for j, mat_id in enumerate(mesh_result.face_material_ids):
                 if mat_id == mat:

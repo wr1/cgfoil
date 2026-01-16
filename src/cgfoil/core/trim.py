@@ -1,7 +1,9 @@
 """Trimming utilities."""
 
 import math
+
 from CGAL.CGAL_Kernel import Point_2, Segment_2, do_intersect, intersection
+
 from cgfoil.utils.logger import logger
 
 
@@ -19,7 +21,7 @@ def trim_self_intersecting_curve(points):
                 intersecting_indices.add(j)
     logger.info(
         f"Self intersecting indices: {intersecting_indices}, "
-        f"count: {len(intersecting_indices)}"
+        f"count: {len(intersecting_indices)}",
     )
     if intersecting_indices:
         min_idx = min(intersecting_indices)
@@ -37,7 +39,8 @@ def trim_line(points, inner_points):
         seg = Segment_2(points[i], points[i + 1])
         for j in range(len(inner_points)):
             inner_seg = Segment_2(
-                inner_points[j], inner_points[(j + 1) % len(inner_points)]
+                inner_points[j],
+                inner_points[(j + 1) % len(inner_points)],
             )
             if do_intersect(seg, inner_seg):
                 inter = intersection(seg, inner_seg)
@@ -49,10 +52,12 @@ def trim_line(points, inner_points):
         # Sort by distance from start
         start = points[0]
         all_points.sort(
-            key=lambda p: math.sqrt((p.x() - start.x()) ** 2 + (p.y() - start.y()) ** 2)
+            key=lambda p: math.sqrt(
+                (p.x() - start.x()) ** 2 + (p.y() - start.y()) ** 2,
+            ),
         )
         # Find indices of inter_points in sorted list
-        inter_set = set((p.x(), p.y()) for p in inter_points)
+        inter_set = {(p.x(), p.y()) for p in inter_points}
         indices = [i for i, p in enumerate(all_points) if (p.x(), p.y()) in inter_set]
         if indices:
             min_idx = min(indices)
@@ -60,7 +65,7 @@ def trim_line(points, inner_points):
             trimmed = all_points[min_idx : max_idx + 1]
             logger.info(
                 f"Trimmed line to {len(trimmed)} points between "
-                f"indices {min_idx} to {max_idx}"
+                f"indices {min_idx} to {max_idx}",
             )
             return trimmed
     logger.info("No trimming applied, returning original points")
@@ -87,7 +92,7 @@ def adjust_endpoints(points, distance):
         )
         logger.info(
             f"Adjusted start point from ({p_start.x():.4f}, {p_start.y():.4f}) "
-            f"to ({new_p0.x():.4f}, {new_p0.y():.4f}) along overall direction"
+            f"to ({new_p0.x():.4f}, {new_p0.y():.4f}) along overall direction",
         )
         points[0] = new_p0
         # For end point, move forward along overall direction
@@ -97,7 +102,7 @@ def adjust_endpoints(points, distance):
         )
         logger.info(
             f"Adjusted end point from ({p_end.x():.4f}, {p_end.y():.4f}) "
-            f"to ({new_pn.x():.4f}, {new_pn.y():.4f}) along overall direction"
+            f"to ({new_pn.x():.4f}, {new_pn.y():.4f}) along overall direction",
         )
         points[-1] = new_pn
     else:

@@ -28,7 +28,7 @@ def build_anba_data(mesh_result, matdb=None):
                             "nu13": mat["nu13"],
                             "nu23": mat["nu23"],
                             "rho": mat["rho"],
-                        }
+                        },
                     )
                 elif mat["type"] == "isotropic":
                     matlibrary.append(
@@ -37,7 +37,7 @@ def build_anba_data(mesh_result, matdb=None):
                             "E": mat["E"],
                             "nu": mat["nu"],
                             "rho": mat["rho"],
-                        }
+                        },
                     )
             else:
                 # Default isotropic if missing
@@ -47,7 +47,7 @@ def build_anba_data(mesh_result, matdb=None):
                         "E": 98000000.0,
                         "nu": 0.3,
                         "rho": 7850.0,
-                    }
+                    },
                 )
     else:
         unique_materials = sorted(set(mesh_result.face_material_ids))
@@ -70,7 +70,7 @@ def build_anba_data(mesh_result, matdb=None):
         plane_orientations.append(angle)
     scaling_constraint = 1.0
     singular = False
-    data = {
+    return {
         "points": points,
         "cells": cells,
         "degree": degree,
@@ -81,4 +81,3 @@ def build_anba_data(mesh_result, matdb=None):
         "scaling_constraint": scaling_constraint,
         "singular": singular,
     }
-    return data

@@ -2,16 +2,20 @@
 ply logic from vtp_multi_ply."""
 
 import argparse
-import pyvista as pv
 import re
+
+import pyvista as pv
+
 from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 parser = argparse.ArgumentParser(
-    description="Process VTP file for merged airfoil meshing."
+    description="Process VTP file for merged airfoil meshing.",
 )
 parser.add_argument(
-    "--vtp-file", default="examples/airfoil_sections.vtp", help="Path to the VTP file"
+    "--vtp-file",
+    default="examples/airfoil_sections.vtp",
+    help="Path to the VTP file",
 )
 parser.add_argument("--section-id", type=int, default=28, help="Section ID threshold")
 args = parser.parse_args()
@@ -22,7 +26,8 @@ mesh_vtp = pv.read(vtp_file).rotate_z(-90).rotate_x(180)
 
 # Filter for section
 section_mesh = mesh_vtp.threshold(
-    value=(args.section_id, args.section_id), scalars="section_id"
+    value=(args.section_id, args.section_id),
+    scalars="section_id",
 )
 
 
@@ -51,7 +56,7 @@ def sort_points_by_y(mesh: pv.PolyData) -> pv.PolyData:
     mesh.cells = cells
 
     # Update point_data
-    for key in mesh.point_data.keys():
+    for key in mesh.point_data:
         mesh.point_data[key] = mesh.point_data[key][sorted_indices]
 
     return mesh
@@ -63,14 +68,16 @@ min_panel_id = section_mesh.cell_data["panel_id"].min()
 airfoil = pv.merge(
     [
         section_mesh.threshold(
-            value=(0, section_mesh.cell_data["panel_id"].max()), scalars="panel_id"
+            value=(0, section_mesh.cell_data["panel_id"].max()),
+            scalars="panel_id",
         ),
         sort_points_by_y(
             section_mesh.threshold(
-                value=(min_panel_id, min_panel_id), scalars="panel_id"
-            )
+                value=(min_panel_id, min_panel_id),
+                scalars="panel_id",
+            ),
         ),
-    ]
+    ],
 )
 
 points_2d = airfoil.points[:, :2].tolist()
@@ -86,7 +93,7 @@ web_points_2d_2 = web2.points[:, :2].tolist()
 def get_thickness_arrays(mesh):
     mesh_point = mesh.cell_data_to_point_data()
     thickness_keys = [
-        k for k in mesh_point.point_data.keys() if re.match(r"ply_.*_thickness", k)
+        k for k in mesh_point.point_data if re.match(r"ply_.*_thickness", k)
     ]
     thickness_keys.sort(key=lambda x: int(re.search(r"ply_(\d+)", x).group(1)))
     return {k: mesh_point.point_data[k] for k in thickness_keys}
@@ -101,7 +108,7 @@ web2_thicknesses = get_thickness_arrays(web2)
 # Define skins
 skins = {}
 material_id = 1
-for i, (key, thickness_array) in enumerate(airfoil_thicknesses.items(), start=1):
+for i, (_key, thickness_array) in enumerate(airfoil_thicknesses.items(), start=1):
     skins[f"skin{i}"] = Skin(
         thickness=Thickness(type="array", array=list(thickness_array)),
         material=material_id,
@@ -126,7 +133,9 @@ for web_name, thicknesses, points in web_meshes:
     material_id += len(thicknesses)
     normal_ref = [1, 0] if web_name == "web1" else [-1, 0]
     web_definition[web_name] = Web(
-        coord_input=points, plies=plies, normal_ref=normal_ref
+        coord_input=points,
+        plies=plies,
+        normal_ref=normal_ref,
     )
 
 # Create AirfoilMesh
