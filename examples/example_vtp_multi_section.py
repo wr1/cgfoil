@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import multiprocessing
-import os
+from pathlib import Path
 
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
@@ -26,8 +26,8 @@ def process_single_section(args):
         mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
 
         # Create subdirectory
-        section_dir = os.path.join(output_base_dir, f"section_{section_id}")
-        os.makedirs(section_dir, exist_ok=True)
+        section_dir = Path(output_base_dir) / f"section_{section_id}"
+        section_dir.mkdir(parents=True, exist_ok=True)
 
         # Filter mesh for this section_id
         section_mesh = mesh_vtp.threshold(
@@ -109,8 +109,8 @@ def process_single_section(args):
             airfoil_input=points_2d,
             n_elem=None,
             plot=True,
-            plot_filename=os.path.join(section_dir, "plot.png"),
-            vtk=os.path.join(section_dir, "output.vtk"),
+            plot_filename=section_dir / "plot.png",
+            vtk=section_dir / "output.vtk",
             split_view=True,
         )
 

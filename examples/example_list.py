@@ -1,10 +1,14 @@
 """Programmatic example demonstrating different airfoil input types for cgfoil."""
 
+from pathlib import Path
+
 import numpy as np
 import pyvista as pv
 
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import AirfoilMesh, Skin, Thickness
+
+NUM_PARTS = 2
 
 # Simplified skins and webs for demonstration
 skins = {
@@ -87,11 +91,11 @@ run_cgfoil(mesh3)
 # Example 4: Using a VTK file created from .dat
 # Load points from .dat
 points_2d = []
-with open("examples/naca0018.dat") as f:
+with Path("examples/naca0018.dat").open() as f:
     lines = f.readlines()
     for line in lines[1:]:  # Skip header
         parts = line.strip().split()
-        if len(parts) == 2:
+        if len(parts) == NUM_PARTS:
             x = float(parts[0])
             y = float(parts[1])
             points_2d.append([x, y])
@@ -114,11 +118,11 @@ run_cgfoil(mesh4)
 # Example 5: Using array thickness definition
 # Load airfoil points to get the number of points
 airfoil_points = []
-with open("examples/naca0018.dat") as f:
+with Path("examples/naca0018.dat").open() as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
-        if len(parts) == 2:
+        if len(parts) == NUM_PARTS:
             x = float(parts[0])
             y = float(parts[1])
             airfoil_points.append((x, y))

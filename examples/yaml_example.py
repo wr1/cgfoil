@@ -13,7 +13,7 @@ from cgfoil.models import AirfoilMesh
 
 # Load YAML configuration
 yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-with open(yaml_file) as f:
+with yaml_file.open() as f:
     data = yaml.safe_load(f)
 
 # Validate and create AirfoilMesh model
@@ -24,7 +24,3 @@ mesh = AirfoilMesh(**data)
 
 # Run the meshing
 run_cgfoil(mesh)
-
-# Alternatively, generate mesh separately
-# mesh_result = generate_mesh(mesh)
-# plot_mesh(mesh_result)

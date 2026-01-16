@@ -1,9 +1,8 @@
 """Mesh command functionality."""
 
-from __future__ import annotations
-
 import pickle
 import sys
+from pathlib import Path
 
 import yaml
 
@@ -13,11 +12,9 @@ from cgfoil.utils.io import save_mesh_to_vtk
 from cgfoil.utils.logger import logger
 
 
-def mesh_from_yaml(
-    yaml_file: str, output_mesh: str | None = None, vtk_file: str | None = None
-):
+def mesh_from_yaml(yaml_file: str, output_mesh=None, vtk_file=None):
     """Generate mesh from YAML file."""
-    with open(yaml_file) as f:
+    with Path(yaml_file).open() as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     try:
@@ -25,7 +22,7 @@ def mesh_from_yaml(
     except ValueError:
         sys.exit(1)
     if output_mesh:
-        with open(output_mesh, "wb") as f:
+        with Path(output_mesh).open("wb") as f:
             pickle.dump(mesh_result, f)
         logger.info(f"Mesh saved to {output_mesh}")
     if vtk_file:

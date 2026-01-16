@@ -10,7 +10,7 @@ def build_vtk_mesh(mesh_result, mesh=None):
         import pyvista as pv
     except ImportError:
         msg = "pyvista not available"
-        raise ImportError(msg)
+        raise ImportError(msg) from None
     mesh_obj = pv.UnstructuredGrid(
         np.array(mesh_result.faces).flatten(),
         [pv.CellType.TRIANGLE] * len(mesh_result.faces),

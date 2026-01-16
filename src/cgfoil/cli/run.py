@@ -1,17 +1,10 @@
 """Run command functionality."""
 
-from __future__ import annotations
-
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import AirfoilMesh, Skin, Thickness
 
 
-def run_defaults(
-    plot: bool = False,
-    vtk: str | None = None,
-    file: str = "naca0018.dat",
-    split: bool = False,
-):
+def run_defaults(plot=False, vtk=None, file: str = "naca0018.dat", split=False):
     """Run meshing with default skins and no webs."""
     skins = {
         "skin": Skin(

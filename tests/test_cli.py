@@ -11,7 +11,10 @@ import yaml
 
 def test_cli_help():
     result = subprocess.run(
-        ["cgfoil", "--help"], check=False, capture_output=True, text=True
+        ["cgfoil", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode == 0
     assert "CGAL-based airfoil meshing tool" in result.stdout
@@ -19,7 +22,10 @@ def test_cli_help():
 
 def test_cli_invalid_command():
     result = subprocess.run(
-        ["cgfoil", "invalid"], check=False, capture_output=True, text=True
+        ["cgfoil", "invalid"],
+        check=False,
+        capture_output=True,
+        text=True,
     )
     assert result.returncode != 0
 

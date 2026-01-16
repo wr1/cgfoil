@@ -124,7 +124,3 @@ mesh = AirfoilMesh(
 
 # Run the meshing
 run_cgfoil(mesh)
-
-# Alternatively, generate mesh separately
-# mesh_result = generate_mesh(mesh)
-# plot_mesh(mesh_result)

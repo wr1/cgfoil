@@ -1,7 +1,12 @@
 """Programmatic example demonstrating airfoil meshing with webs."""
 
+from pathlib import Path
+
 from cgfoil.core.main import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
+
+NUM_PARTS = 2
+TOLERANCE = 0.01
 
 # Define skins
 skins = {
@@ -19,11 +24,11 @@ skins = {
 
 # Load airfoil points to find points at x=0.3
 airfoil_points = []
-with open("examples/naca0018.dat") as f:
+with Path("examples/naca0018.dat").open() as f:
     lines = f.readlines()
     for line in lines[1:]:
         parts = line.strip().split()
-        if len(parts) == 2:
+        if len(parts) == NUM_PARTS:
             x = float(parts[0])
             y = float(parts[1])
             airfoil_points.append((x, y))
@@ -32,7 +37,7 @@ with open("examples/naca0018.dat") as f:
 upper_point = None
 lower_point = None
 for x, y in airfoil_points:
-    if abs(x - 0.3) < 0.01:
+    if abs(x - 0.3) < TOLERANCE:
         if y > 0:
             upper_point = (x, y)
         elif y < 0:

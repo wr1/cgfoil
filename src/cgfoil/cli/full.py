@@ -2,6 +2,7 @@
 
 import os
 import pickle
+from pathlib import Path
 
 import yaml
 
@@ -15,19 +16,19 @@ from cgfoil.utils.logger import logger
 
 def full_mesh(yaml_file: str, output_dir: str):
     """Run full meshing pipeline."""
-    os.makedirs(output_dir, exist_ok=True)
-    with open(yaml_file) as f:
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    with Path(yaml_file).open() as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     mesh_result = generate_mesh(mesh)
     # Save mesh
     mesh_file = os.path.join(output_dir, "mesh.pck")
-    with open(mesh_file, "wb") as f:
+    with Path(mesh_file).open("wb") as f:
         pickle.dump(mesh_result, f)
     logger.info(f"Mesh saved to {mesh_file}")
     # Plot
     plot_filename = os.path.join(output_dir, "plot.png")
-    plot_existing_mesh(mesh_file, plot_filename, True)
+    plot_existing_mesh(mesh_file, plot_filename, split=True)
     # VTK
     vtk_file = os.path.join(output_dir, "mesh.vtk")
     export_mesh_to_vtk(mesh_file, vtk_file)

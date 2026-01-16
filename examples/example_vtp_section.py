@@ -105,7 +105,6 @@ try:
     mesh = AirfoilMesh(
         skins=skins,
         webs=web_definition,
-        # webs={},
         airfoil_input=points_2d,  # List of (x, y) tuples
         n_elem=None,  # Keep input spacing, do not resample
         plot=True,

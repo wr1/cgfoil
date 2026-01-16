@@ -115,8 +115,7 @@ def plot_triangulation(
     centroids = []
     normals = []
     inplanes = []
-    idx = 0
-    for face in faces:
+    for idx, face in enumerate(faces):
         material_id = face_material_ids[idx]
         if material_id != -1:
             _, v0, v1, v2 = face
@@ -132,7 +131,6 @@ def plot_triangulation(
             centroids.append((cx, cy))
             normals.append(face_normals[idx])
             inplanes.append(face_inplanes[idx])
-        idx += 1
 
     if not split_view:
         # Plot the input lines without trim using alpha=0.1
@@ -223,7 +221,6 @@ def plot_triangulation(
         cx_list, cy_list = zip(*centroids)
         if split_view:
             cy_list = [cy - offset_y for cy in cy_list]
-        # print(cy_list)
         nx_list, ny_list = zip(*normals)
         plt.quiver(
             cx_list,

@@ -44,10 +44,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # If materials db is defined, check all used are present
     if materials:
         name_to_id = {mat["name"]: idx for idx, mat in enumerate(materials)}
-        missing = []
-        for name in used_names:
-            if name not in name_to_id:
-                missing.append(f"'{name}'")
+        missing = [f"'{name}'" for name in used_names if name not in name_to_id]
         if missing:
             msg = (
                 "The following materials are not defined in the materials "
@@ -235,11 +232,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Collect vertices and faces
     vertices = []
     vertex_map = {}
-    idx = 0
-    for v in cdt.finite_vertices():
+    for idx, v in enumerate(cdt.finite_vertices()):
         vertex_map[v] = idx
         vertices.append([v.point().x(), v.point().y(), 0.0])
-        idx += 1
     faces = []
     for face in cdt.finite_faces():
         material_id = -1  # Will compute below
@@ -267,8 +262,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     filtered_face_normals = []
     filtered_face_material_ids = []
     filtered_face_inplanes = []
-    idx = 0
-    for face in cdt.finite_faces():
+    for idx, face in enumerate(cdt.finite_faces()):
         material_id = face_material_ids[idx]
         if material_id != -1:
             v0 = vertex_map[face.vertex(0)]
@@ -278,7 +272,6 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             filtered_face_normals.append(face_normals[idx])
             filtered_face_material_ids.append(material_id)
             filtered_face_inplanes.append(face_inplanes[idx])
-        idx += 1
 
     # Compute cross-sectional areas
     areas = compute_cross_sectional_areas(cdt, face_material_ids)
