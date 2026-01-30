@@ -45,7 +45,13 @@ def test_import():
 def test_models():
     thickness = Thickness(type="constant", value=THICKNESS_0_1)
     assert thickness.compute(
-        {"x": [POINT_0_5], "y": [POINT_0_5], "ta": [POINT_0_5], "tr": [POINT_0_5], "xr": [POINT_0_5]},
+        {
+            "x": [POINT_0_5],
+            "y": [POINT_0_5],
+            "ta": [POINT_0_5],
+            "tr": [POINT_0_5],
+            "xr": [POINT_0_5],
+        },
     ) == [THICKNESS_0_1]
 
     thickness_array = Thickness(type="array", array=[THICKNESS_0_1, 0.2, 0.3])
@@ -199,7 +205,11 @@ def test_compute_face_normals():
     skin_material_ids = [POINT_0]
     outer_normals = [(POINT_0, POINT_1), (POINT_0, POINT_1), (POINT_0, POINT_1)]
     ply_normals = []
-    outer_tangents = [(POINT_1, POINT_0), (-POINT_0_5, POINT_0_5), (-POINT_0_5, -POINT_0_5)]
+    outer_tangents = [
+        (POINT_1, POINT_0),
+        (-POINT_0_5, POINT_0_5),
+        (-POINT_0_5, -POINT_0_5),
+    ]
     face_normals, face_material_ids, face_inplanes = compute_face_normals(
         cdt,
         outer_points,
