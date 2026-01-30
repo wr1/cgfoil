@@ -1,16 +1,17 @@
 """Export tests for cgfoil."""
 
-import os
+import json
 import tempfile
 from pathlib import Path
-import yaml
+
 import pytest
-import json
+import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-from cgfoil.models import AirfoilMesh
+
+from cgfoil.cli.cli import export_mesh_to_anba, export_mesh_to_vtk, summarize_mesh
 from cgfoil.core.main import generate_mesh
-from cgfoil.cli.cli import export_mesh_to_vtk, export_mesh_to_anba, summarize_mesh
+from cgfoil.models import AirfoilMesh
 from cgfoil.utils.plot import plot_triangulation
 
 
@@ -18,7 +19,7 @@ from cgfoil.utils.plot import plot_triangulation
 def mesh_result_fixture():
     with tempfile.TemporaryDirectory() as tmpdir:
         yaml_file = Path(__file__).parent / "airfoil_mesh.yaml"
-        with open(yaml_file, "r") as f:
+        with open(yaml_file) as f:
             data = yaml.safe_load(f)
         mesh = AirfoilMesh(**data)
         mesh.airfoil_input = str(Path(__file__).parent / "naca0018.dat")
@@ -26,26 +27,26 @@ def mesh_result_fixture():
         # Save to pickle
         import pickle
 
-        mesh_file = os.path.join(tmpdir, "mesh.pck")
+        mesh_file = Path(tmpdir) / "mesh.pck"
         with open(mesh_file, "wb") as f:
             pickle.dump(mesh_result, f)
         yield tmpdir, mesh_result
 
 
 def test_export_vtk(mesh_result_fixture):
-    tmpdir, mesh_result = mesh_result_fixture
-    vtk_file = os.path.join(tmpdir, "test.vtk")
-    export_mesh_to_vtk(os.path.join(tmpdir, "mesh.pck"), vtk_file)
-    assert os.path.exists(vtk_file)
+    tmpdir, _mesh_result = mesh_result_fixture
+    vtk_file = Path(tmpdir) / "test.vtk"
+    export_mesh_to_vtk(str(Path(tmpdir) / "mesh.pck"), str(vtk_file))
+    assert vtk_file.exists()
 
 
 def test_export_vtk_loadable(mesh_result_fixture):
     tmpdir, mesh_result = mesh_result_fixture
-    vtk_file = os.path.join(tmpdir, "test.vtk")
-    export_mesh_to_vtk(os.path.join(tmpdir, "mesh.pck"), vtk_file)
+    vtk_file = Path(tmpdir) / "test.vtk"
+    export_mesh_to_vtk(str(Path(tmpdir) / "mesh.pck"), str(vtk_file))
     import pyvista as pv
 
-    mesh = pv.read(vtk_file)
+    mesh = pv.read(str(vtk_file))
     assert "material_id" in mesh.cell_data
     assert "normals" in mesh.cell_data
     assert "inplane" in mesh.cell_data
@@ -54,16 +55,16 @@ def test_export_vtk_loadable(mesh_result_fixture):
 
 
 def test_export_anba(mesh_result_fixture):
-    tmpdir, mesh_result = mesh_result_fixture
-    anba_file = os.path.join(tmpdir, "test.json")
-    export_mesh_to_anba(os.path.join(tmpdir, "mesh.pck"), anba_file)
-    assert os.path.exists(anba_file)
+    tmpdir, _mesh_result = mesh_result_fixture
+    anba_file = Path(tmpdir) / "test.json"
+    export_mesh_to_anba(str(Path(tmpdir) / "mesh.pck"), str(anba_file))
+    assert anba_file.exists()
 
 
 def test_export_anba_fields(mesh_result_fixture):
     tmpdir, mesh_result = mesh_result_fixture
-    anba_file = os.path.join(tmpdir, "test.json")
-    export_mesh_to_anba(os.path.join(tmpdir, "mesh.pck"), anba_file)
+    anba_file = Path(tmpdir) / "test.json"
+    export_mesh_to_anba(str(Path(tmpdir) / "mesh.pck"), str(anba_file))
     with open(anba_file) as f:
         data = json.load(f)
     # assert "mesh" in data
@@ -107,10 +108,10 @@ def test_export_anba_fields(mesh_result_fixture):
 
 
 def test_export_summary(mesh_result_fixture):
-    tmpdir, mesh_result = mesh_result_fixture
-    summary_file = os.path.join(tmpdir, "summary.csv")
-    summarize_mesh(os.path.join(tmpdir, "mesh.pck"), output=summary_file)
-    assert os.path.exists(summary_file)
+    tmpdir, _mesh_result = mesh_result_fixture
+    summary_file = str(Path(tmpdir) / "summary.csv")
+    summarize_mesh(str(Path(tmpdir) / "mesh.pck"), output=summary_file)
+    assert Path(summary_file).exists()
     with open(summary_file) as f:
         content = f.read()
     assert "Total" in content

@@ -1,12 +1,13 @@
 """Command line interface for cgfoil."""
 
-from treeparse import cli, command, argument, option, group
+from treeparse import argument, cli, command, group, option
+
+from cgfoil.cli.export import export_mesh_to_anba, export_mesh_to_vtk
+from cgfoil.cli.full import full_mesh
 from cgfoil.cli.mesh import mesh_from_yaml
 from cgfoil.cli.plot import plot_existing_mesh
-from cgfoil.cli.export import export_mesh_to_vtk, export_mesh_to_anba
-from cgfoil.cli.summary import summarize_mesh
-from cgfoil.cli.full import full_mesh
 from cgfoil.cli.run import run_defaults
+from cgfoil.cli.summary import summarize_mesh
 
 app = cli(
     name="cgfoil",
@@ -25,7 +26,9 @@ mesh_cmd = command(
     callback=mesh_from_yaml,
     arguments=[
         argument(
-            name="yaml_file", arg_type=str, help="Path to YAML configuration file"
+            name="yaml_file",
+            arg_type=str,
+            help="Path to YAML configuration file",
         ),
     ],
     options=[

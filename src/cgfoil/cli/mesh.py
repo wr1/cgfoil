@@ -1,26 +1,28 @@
 """Mesh command functionality."""
 
 import pickle
-import yaml
 import sys
+from pathlib import Path
+
+import yaml
+
 from cgfoil.core.main import generate_mesh
 from cgfoil.models import AirfoilMesh
-from cgfoil.utils.logger import logger
 from cgfoil.utils.io import save_mesh_to_vtk
+from cgfoil.utils.logger import logger
 
 
-def mesh_from_yaml(yaml_file: str, output_mesh: str = None, vtk_file: str = None):
+def mesh_from_yaml(yaml_file: str, output_mesh=None, vtk_file=None):
     """Generate mesh from YAML file."""
-    with open(yaml_file, "r") as f:
+    with Path(yaml_file).open() as f:
         data = yaml.safe_load(f)
     mesh = AirfoilMesh(**data)
     try:
         mesh_result = generate_mesh(mesh)
-    except ValueError as e:
-        print(str(e), file=sys.stderr)
+    except ValueError:
         sys.exit(1)
     if output_mesh:
-        with open(output_mesh, "wb") as f:
+        with Path(output_mesh).open("wb") as f:
             pickle.dump(mesh_result, f)
         logger.info(f"Mesh saved to {output_mesh}")
     if vtk_file:

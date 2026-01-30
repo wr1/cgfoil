@@ -1,14 +1,17 @@
 """Summary command functionality."""
 
 import pickle
+from pathlib import Path
+
 import pandas as pd
+
 from cgfoil.utils.logger import logger
 
 
-def summarize_mesh(mesh_file: str, output: str = None):
+def summarize_mesh(mesh_file: str, output=None):
     """Summarize areas and masses from mesh file."""
-    with open(mesh_file, "rb") as f:
-        mesh_result = pickle.load(f)
+    with Path(mesh_file).open("rb") as f:
+        mesh_result = pickle.load(f)  # noqa: S301
     rows = []
     total_mass = 0.0
     for mat_id, area in sorted(mesh_result.areas.items()):
@@ -26,7 +29,7 @@ def summarize_mesh(mesh_file: str, output: str = None):
                 "Material Name": name,
                 "Area": area,
                 "Mass/m": mass,
-            }
+            },
         )
     if mesh_result.materials:
         rows.append(
@@ -35,10 +38,11 @@ def summarize_mesh(mesh_file: str, output: str = None):
                 "Material Name": "",
                 "Area": "",
                 "Mass/m": total_mass,
-            }
+            },
         )
     df = pd.DataFrame(rows)
     if output:
-        df.to_csv(output, index=False)
+        with Path(output).open("w") as f:
+            df.to_csv(f, index=False)
         logger.info(f"Summary saved to {output}")
     logger.info(df.to_string())

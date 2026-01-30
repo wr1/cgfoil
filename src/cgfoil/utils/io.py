@@ -1,9 +1,12 @@
 """Input/Output utilities."""
 
+import math
+from pathlib import Path
+
+import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from scipy.interpolate import PchipInterpolator
-import numpy as np
-import math
+
 from cgfoil.utils.logger import logger
 
 
@@ -19,7 +22,7 @@ def load_airfoil(airfoil_input, n_elem=None):
             points = [Point_2(x, y) for x, y in points_2d]
         else:
             points = []
-            with open(airfoil_input, "r") as f:
+            with Path(airfoil_input).open() as f:
                 lines = f.readlines()
                 for line in lines[1:]:  # Skip header
                     parts = line.strip().split()
