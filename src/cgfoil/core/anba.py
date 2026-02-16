@@ -15,18 +15,21 @@ def build_anba_data(mesh_result, matdb=None):
             mat = next((m for m in matdb.values() if m["id"] == i), None)
             if mat:
                 if mat["type"] == "orthotropic":
+                    # ANBA coordinate system: switch axes 1 and 3 from input material properties.
+                    # Input assumes E1=1, E2=2, E3=3.
+                    # Switch to E1=3, E3=1; G12=G23, G23=G12, G13=G13; nu13=nu23, nu23=nu13.
                     matlibrary.append(
                         {
                             "type": "orthotropic",
-                            "E1": mat["E1"],
+                            "E1": mat["E3"],
                             "E2": mat["E2"],
-                            "E3": mat["E3"],
-                            "G12": mat["G12"],
+                            "E3": mat["E1"],
+                            "G12": mat["G23"],
                             "G13": mat["G13"],
-                            "G23": mat["G23"],
+                            "G23": mat["G12"],
                             "nu12": mat["nu12"],
-                            "nu13": mat["nu13"],
-                            "nu23": mat["nu23"],
+                            "nu13": mat["nu23"],
+                            "nu23": mat["nu13"],
                             "rho": mat["rho"],
                         },
                     )
