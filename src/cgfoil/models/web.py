@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING
 
-import numpy as np
 from pydantic import BaseModel, ConfigDict
 
-from .ply import Ply
+if TYPE_CHECKING:
+    import numpy as np
+
+    from .ply import Ply
 
 
 class Web(BaseModel):

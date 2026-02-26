@@ -8,10 +8,10 @@ from .thickness import Thickness
 from .web import Web
 
 __all__ = [
-    "Thickness",
-    "Ply",
-    "Web",
-    "Skin",
     "AirfoilMesh",
     "MeshResult",
+    "Ply",
+    "Skin",
+    "Thickness",
+    "Web",
 ]

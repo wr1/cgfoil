@@ -1,7 +1,12 @@
 """Mesh plotting logic."""
+from __future__ import annotations
 
-from cgfoil.models import MeshResult
+from typing import TYPE_CHECKING
+
 from cgfoil.utils.plot import plot_triangulation
+
+if TYPE_CHECKING:
+    from cgfoil.models import MeshResult
 
 
 def plot_mesh(

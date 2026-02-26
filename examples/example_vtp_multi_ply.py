@@ -2,6 +2,7 @@
 
 import argparse
 import re
+
 import numpy as np
 import pyvista as pv
 
@@ -45,13 +46,12 @@ web_points_2d_2 = web2.points[:, :2].tolist()
 
 # Function to get thickness arrays from mesh
 
+
 def get_thickness_arrays(mesh):
     """Get all thickness arrays from mesh cell_data matching ply_*_thickness.
     Snaps averaged point data back to original discrete cell levels to remove averaging smearing (e.g. artificial 0.004 values).
     """
-    thickness_keys = [
-        k for k in mesh.cell_data if re.match(r"ply_.*_thickness", k)
-    ]
+    thickness_keys = [k for k in mesh.cell_data if re.match(r"ply_.*_thickness", k)]
     thickness_keys.sort(key=lambda x: int(re.search(r"ply_(\d+)", x).group(1)))
     result = {}
     mesh_point = mesh.cell_data_to_point_data()
@@ -60,12 +60,10 @@ def get_thickness_arrays(mesh):
         unique_levels = np.sort(np.unique(np.round(cell_thick, decimals=8)))
         point_thick = mesh_point.point_data[k]
         # Snap to nearest original level to remove smear
-        snapped = np.array([
-            unique_levels[np.argmin(np.abs(unique_levels - v))]
-            for v in point_thick
-        ])
-        unique, counts = np.unique(snapped, return_counts=True)
-        print(f"{k} stats after snap (no smear): len={len(snapped)}, unique={dict(zip(unique.tolist(), counts.tolist()))}")
+        snapped = np.array(
+            [unique_levels[np.argmin(np.abs(unique_levels - v))] for v in point_thick],
+        )
+        _unique, _counts = np.unique(snapped, return_counts=True)
         result[k] = snapped.tolist()
     return result
 

@@ -9,11 +9,11 @@ from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
 from cgfoil.core.generate_mesh import generate_mesh
-from cgfoil.core.plot_mesh import plot_mesh
-from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
+from cgfoil.core.plot_mesh import plot_mesh
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.core.trim import adjust_endpoints, trim_self_intersecting_curve
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 from cgfoil.utils.geometry import point_in_polygon

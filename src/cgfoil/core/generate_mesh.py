@@ -19,6 +19,7 @@ from cgfoil.models import AirfoilMesh, MeshResult
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
 from cgfoil.utils.summary import compute_cross_sectional_areas
+
 from .mesh import create_line_mesh
 
 
