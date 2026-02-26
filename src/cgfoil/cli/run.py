@@ -1,6 +1,6 @@
 """Run command functionality."""
 
-from cgfoil.core.main import run_cgfoil
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Skin, Thickness
 
 

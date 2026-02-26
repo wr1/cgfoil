@@ -1,4 +1,4 @@
-"""Main execution logic for cgfoil."""
+"""Mesh generation logic."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
-from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
 from cgfoil.core.trim import (
@@ -17,10 +16,10 @@ from cgfoil.core.trim import (
     trim_self_intersecting_curve,
 )
 from cgfoil.models import AirfoilMesh, MeshResult
-from cgfoil.utils.io import load_airfoil, save_mesh_to_vtk
+from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
-from cgfoil.utils.plot import plot_triangulation
 from cgfoil.utils.summary import compute_cross_sectional_areas
+from .mesh import create_line_mesh
 
 
 def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
@@ -300,51 +299,3 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         skin_ply_thicknesses=ply_thicknesses,
         web_ply_thicknesses=web_ply_thicknesses,
     )
-
-
-def plot_mesh(
-    mesh_result: MeshResult,
-    plot_filename: str | None = None,
-    split_view: bool = False,
-):
-    # Convert back to Point_2 for plotting
-    from CGAL.CGAL_Kernel import Point_2
-
-    outer_points = [Point_2(*p) for p in mesh_result.outer_points]
-    inner_list = [[Point_2(*p) for p in inner] for inner in mesh_result.inner_list]
-    line_ply_list = [[Point_2(*p) for p in ply] for ply in mesh_result.line_ply_list]
-    untrimmed_lines = [
-        [Point_2(*p) for p in line] for line in mesh_result.untrimmed_lines
-    ]
-    plot_triangulation(
-        mesh_result.vertices,
-        mesh_result.faces,
-        outer_points,
-        inner_list,
-        line_ply_list,
-        untrimmed_lines,
-        mesh_result.web_material_ids,
-        mesh_result.skin_material_ids,
-        mesh_result.web_names,
-        mesh_result.face_normals,
-        mesh_result.face_material_ids,
-        mesh_result.face_inplanes,
-        split_view,
-        plot_filename,
-    )
-
-
-def run_cgfoil(mesh: AirfoilMesh):
-    mesh_result = generate_mesh(mesh)
-    logger.info(f"Cross-sectional areas: {mesh_result.areas}")
-
-    if mesh.vtk:
-        save_mesh_to_vtk(mesh_result, mesh, mesh.vtk)
-
-    if mesh.plot:
-        plot_mesh(mesh_result, mesh.plot_filename, mesh.split_view)
-
-    logger.info(f"Number of vertices: {len(mesh_result.vertices)}")
-    logger.info(f"Number of faces: {len(mesh_result.faces)}")
-    logger.info(f"Web Material ids: {mesh_result.web_material_ids}")
-    logger.info(f"Skin Material ids: {mesh_result.skin_material_ids}")

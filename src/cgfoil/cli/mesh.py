@@ -6,7 +6,7 @@ from pathlib import Path
 
 import yaml
 
-from cgfoil.core.main import generate_mesh
+from cgfoil.core.generate_mesh import generate_mesh
 from cgfoil.models import AirfoilMesh
 from cgfoil.utils.io import save_mesh_to_vtk
 from cgfoil.utils.logger import logger

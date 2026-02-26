@@ -9,8 +9,9 @@ import yaml
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
-from cgfoil.cli.cli import export_mesh_to_anba, export_mesh_to_vtk, summarize_mesh
-from cgfoil.core.main import generate_mesh
+from cgfoil.cli.export import export_mesh_to_anba, export_mesh_to_vtk
+from cgfoil.cli.summary import summarize_mesh
+from cgfoil.core.generate_mesh import generate_mesh
 from cgfoil.models import AirfoilMesh
 from cgfoil.utils.plot import plot_triangulation
 

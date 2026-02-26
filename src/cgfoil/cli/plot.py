@@ -3,7 +3,7 @@
 import pickle
 from pathlib import Path
 
-from cgfoil.core.main import plot_mesh
+from cgfoil.core.plot_mesh import plot_mesh
 
 
 def plot_existing_mesh(mesh_file: str, plot_filename=None, split=False):

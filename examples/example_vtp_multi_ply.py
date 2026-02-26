@@ -2,10 +2,10 @@
 
 import argparse
 import re
-
+import numpy as np
 import pyvista as pv
 
-from cgfoil.core.main import run_cgfoil
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
 
 parser = argparse.ArgumentParser(
@@ -24,9 +24,12 @@ vtp_file = args.vtp_file
 mesh_vtp = (
     pv.read(vtp_file)
     .threshold(value=(args.section_id, args.section_id), scalars="section_id")
-    .rotate_z(-90)
-    .rotate_x(180)
+    .rotate_z(90)
+    # .rotate_x(180)
 )
+
+
+mesh_vtp.save("processed_section.vtu")
 
 airfoil = mesh_vtp.threshold(value=(0, 12), scalars="panel_id")
 web1 = mesh_vtp.threshold(value=(-1, -1), scalars="panel_id")
@@ -39,19 +42,32 @@ points_2d = airfoil.points[:, :2].tolist()
 web_points_2d_1 = web1.points[:, :2].tolist()
 web_points_2d_2 = web2.points[:, :2].tolist()
 
+
 # Function to get thickness arrays from mesh
 
-
 def get_thickness_arrays(mesh):
-    """Get all thickness arrays from mesh cell_data matching ply_*_thickness."""
-    # Convert cell data to point data
-    mesh_point = mesh.cell_data_to_point_data()
+    """Get all thickness arrays from mesh cell_data matching ply_*_thickness.
+    Snaps averaged point data back to original discrete cell levels to remove averaging smearing (e.g. artificial 0.004 values).
+    """
     thickness_keys = [
-        k for k in mesh_point.point_data if re.match(r"ply_.*_thickness", k)
+        k for k in mesh.cell_data if re.match(r"ply_.*_thickness", k)
     ]
-    # Sort by the number in the name, assuming ply_XXXX_...
     thickness_keys.sort(key=lambda x: int(re.search(r"ply_(\d+)", x).group(1)))
-    return {k: mesh_point.point_data[k] for k in thickness_keys}
+    result = {}
+    mesh_point = mesh.cell_data_to_point_data()
+    for k in thickness_keys:
+        cell_thick = mesh.cell_data[k]
+        unique_levels = np.sort(np.unique(np.round(cell_thick, decimals=8)))
+        point_thick = mesh_point.point_data[k]
+        # Snap to nearest original level to remove smear
+        snapped = np.array([
+            unique_levels[np.argmin(np.abs(unique_levels - v))]
+            for v in point_thick
+        ])
+        unique, counts = np.unique(snapped, return_counts=True)
+        print(f"{k} stats after snap (no smear): len={len(snapped)}, unique={dict(zip(unique.tolist(), counts.tolist()))}")
+        result[k] = snapped.tolist()
+    return result
 
 
 # Get thicknesses for airfoil
@@ -71,6 +87,7 @@ for i, (_key, thickness_array) in enumerate(airfoil_thicknesses.items(), start=1
         sort_index=i,
     )
     material_id += 1
+
 
 # Define webs (multiple plies per web from their thicknesses)
 web_definition = {}

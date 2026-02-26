@@ -9,7 +9,7 @@ import yaml
 from cgfoil.cli.export import export_mesh_to_anba, export_mesh_to_vtk
 from cgfoil.cli.plot import plot_existing_mesh
 from cgfoil.cli.summary import summarize_mesh
-from cgfoil.core.main import generate_mesh
+from cgfoil.core.generate_mesh import generate_mesh
 from cgfoil.models import AirfoilMesh
 from cgfoil.utils.logger import logger
 

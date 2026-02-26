@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from cgfoil.core.main import generate_mesh
+from cgfoil.core.generate_mesh import generate_mesh
 from cgfoil.models import AirfoilMesh
 
 

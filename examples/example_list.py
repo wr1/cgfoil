@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pyvista as pv
 
-from cgfoil.core.main import run_cgfoil
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Skin, Thickness
 
 NUM_PARTS = 2

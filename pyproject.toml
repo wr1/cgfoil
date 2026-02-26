@@ -19,6 +19,7 @@ dependencies = [
     "treeparse",
     "pandas",
     "pyyaml",
+    "CGAL"
 ]
 
 [project.scripts]

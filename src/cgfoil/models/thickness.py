@@ -1,11 +1,11 @@
-"""Pydantic data models for cgfoil inputs."""
+"""Thickness model for airfoil plies."""
 
 from __future__ import annotations
 
 from typing import Any
 
 import numpy as np
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 
 class Thickness(BaseModel):
@@ -70,70 +70,3 @@ class Thickness(BaseModel):
             return self.array
         msg = f"Unknown thickness type: {self.type}"
         raise ValueError(msg)
-
-
-class Ply(BaseModel):
-    """Model for a ply in a web."""
-
-    thickness: Thickness
-    material: int | str
-
-
-class Web(BaseModel):
-    """Model for a web definition."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    points: list[tuple[float, float]] | None = None
-    coord_input: str | list[tuple[float, float]] | np.ndarray | None = None
-    plies: list[Ply]
-    normal_ref: list[float] = [0, 0]
-    n_elem: int | None = None
-
-
-class Skin(BaseModel):
-    """Model for a skin layer."""
-
-    thickness: Thickness
-    material: int | str
-    sort_index: int
-
-
-class AirfoilMesh(BaseModel):
-    """Model for defining an airfoil mesh."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    skins: dict[str, Skin]
-    webs: dict[str, Web]
-    airfoil_input: str | list[tuple[float, float]] | np.ndarray = "naca0018.dat"
-    n_elem: int | None = None
-    plot: bool = False
-    vtk: str | None = None
-    split_view: bool = False
-    plot_filename: str | None = None
-    materials: list[dict[str, Any]] | None = None
-    scale_factor: float = 1.0
-
-
-class MeshResult(BaseModel):
-    """Model for mesh generation results."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    vertices: list[list[float]]
-    faces: list[list[int]]
-    outer_points: list[tuple[float, float]]
-    inner_list: list[list[tuple[float, float]]]
-    line_ply_list: list[list[tuple[float, float]]]
-    untrimmed_lines: list[list[tuple[float, float]]]
-    web_material_ids: list[int]
-    skin_material_ids: list[int]
-    web_names: list[str]
-    face_normals: list[tuple[float, float]]
-    face_material_ids: list[int]
-    face_inplanes: list[tuple[float, float]]
-    areas: dict[int, float]
-    materials: list[dict[str, Any]] | None = None
-    skin_ply_thicknesses: list[list[float]]
-    web_ply_thicknesses: list[list[float]]

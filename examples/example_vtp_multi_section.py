@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import multiprocessing
 from pathlib import Path
 
-from cgfoil.core.main import run_cgfoil
+from loguru import logger
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
+import numpy as np
 
 try:
     import pyvista as pv
@@ -21,8 +22,9 @@ ROTATION_ANGLE = 90
 def process_single_section(args):
     """Process a single section_id."""
     section_id, vtp_file, output_base_dir = args
+    logger.info(f"Processing section {section_id}")
     try:
-        # Load VTP file in each process to avoid serialization issues
+        # Load VTP file
         mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
 
         # Create subdirectory
@@ -109,21 +111,21 @@ def process_single_section(args):
             airfoil_input=points_2d,
             n_elem=None,
             plot=True,
-            plot_filename=section_dir / "plot.png",
-            vtk=section_dir / "output.vtk",
+            plot_filename=str(section_dir / "plot.png"),
+            vtk=str(section_dir / "output.vtk"),
             split_view=True,
         )
 
         # Run the meshing
         run_cgfoil(mesh)
-    except Exception:
-        pass
+        logger.info(f"Completed processing section {section_id}")
+    except Exception as e:
+        logger.error(f"Error processing section {section_id}: {e}")
 
 
 def process_vtp_multi_section(
     vtp_file: str,
     output_base_dir: str,
-    num_processes: int | None = None,
 ):
     """Process VTP file for all unique section_ids, outputting to subdirectories."""
     # Load VTP file to get unique ids
@@ -135,16 +137,13 @@ def process_vtp_multi_section(
         raise ValueError(msg)
     unique_section_ids = mesh_vtp.cell_data["section_id"]
     unique_ids = sorted(set(unique_section_ids))
-    total_sections = len(unique_ids)
 
-    # Prepare arguments for multiprocessing
+    # Prepare arguments for processing
     args_list = [(section_id, vtp_file, output_base_dir) for section_id in unique_ids]
 
-    # Use multiprocessing Pool
-    if num_processes is None:
-        num_processes = min(multiprocessing.cpu_count(), total_sections)
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        pool.map(process_single_section, args_list)
+    # Process in series
+    for args in args_list:
+        process_single_section(args)
 
 
 # Example usage

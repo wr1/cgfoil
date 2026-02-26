@@ -8,7 +8,9 @@ import numpy as np
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
 
-from cgfoil.core.main import generate_mesh, plot_mesh, run_cgfoil
+from cgfoil.core.generate_mesh import generate_mesh
+from cgfoil.core.plot_mesh import plot_mesh
+from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.core.mesh import create_line_mesh
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
@@ -260,9 +262,11 @@ def test_plot_triangulation():
     # Compute vertices and faces
     vertices = []
     vertex_map = {}
-    for idx, v in enumerate(cdt.finite_vertices()):
+    idx = 0
+    for v in cdt.finite_vertices():
         vertex_map[v] = idx
         vertices.append([v.point().x(), v.point().y(), 0.0])
+        idx += 1
     faces = []
     for face in cdt.finite_faces():
         v0 = vertex_map[face.vertex(POINT_0)]
