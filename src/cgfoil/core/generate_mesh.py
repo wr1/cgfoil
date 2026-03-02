@@ -265,9 +265,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         xs = [v[0] for v in vertices]
         ys = [v[1] for v in vertices]
         char_length = max(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
-        EPS_AREA = 1e-10 * char_length**2
+        EPS_AREA = 1e-12 * char_length**2
     else:
-        EPS_AREA = 1e-12
+        EPS_AREA = 1e-14
 
     faces = []
     filtered_face_normals = []
@@ -287,7 +287,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         area2 = abs(
             p0.x() * (p1.y() - p2.y())
             + p1.x() * (p2.y() - p0.y())
-            + p2.x() * (p0.y() - p1.y()),
+            + p2.x() * (p0.y() - p1.y())
         )
         if area2 < EPS_AREA:
             removed += 1
@@ -304,29 +304,46 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     if removed:
         logger.warning(
             f"Removed {removed} degenerate (near-collinear) triangles "
-            f"(area < {EPS_AREA:.2e}) before export",
+            f"(area < {EPS_AREA:.2e}) before export"
         )
 
-    # Areas are computed from the cleaned lists (original function still works)
-    areas = compute_cross_sectional_areas(cdt, face_material_ids)
-    # Collect faces with material_id != -1 and filter the lists
-    faces = []
-    filtered_face_normals = []
-    filtered_face_material_ids = []
-    filtered_face_inplanes = []
-    for idx, face in enumerate(cdt.finite_faces()):
-        material_id = face_material_ids[idx]
-        if material_id != -1:
-            v0 = vertex_map[face.vertex(0)]
-            v1 = vertex_map[face.vertex(1)]
-            v2 = vertex_map[face.vertex(2)]
-            faces.append([3, v0, v1, v2])
-            filtered_face_normals.append(face_normals[idx])
-            filtered_face_material_ids.append(material_id)
-            filtered_face_inplanes.append(face_inplanes[idx])
+    # ------------------------------------------------------------------
+    # Remove loose nodes (vertices not connected to any face)
+    # ------------------------------------------------------------------
+    used_vertices = set()
+    for face in faces:
+        _, v0, v1, v2 = face
+        used_vertices.add(v0)
+        used_vertices.add(v1)
+        used_vertices.add(v2)
 
-    # Compute cross-sectional areas
-    areas = compute_cross_sectional_areas(cdt, face_material_ids)
+    new_vertices = []
+    old_to_new = {}
+    for i, v in enumerate(vertices):
+        if i in used_vertices:
+            old_to_new[i] = len(new_vertices)
+            new_vertices.append(v)
+    vertices = new_vertices
+
+    # Update face indices
+    for face in faces:
+        face[1] = old_to_new[face[1]]
+        face[2] = old_to_new[face[2]]
+        face[3] = old_to_new[face[3]]
+
+    # Compute cross-sectional areas from filtered faces
+    areas = {}
+    for i, face in enumerate(faces):
+        material_id = filtered_face_material_ids[i]
+        _, v0, v1, v2 = face
+        p0 = vertices[v0][:2]
+        p1 = vertices[v1][:2]
+        p2 = vertices[v2][:2]
+        x1, y1 = p0
+        x2, y2 = p1
+        x3, y3 = p2
+        area = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+        areas[material_id] = areas.get(material_id, 0) + area
 
     # Convert to serializable lists
     outer_points_list = [(p.x(), p.y()) for p in outer_points]

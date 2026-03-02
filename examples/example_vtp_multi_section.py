@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from loguru import logger
+import logging
 
 from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
+
+logger = logging.getLogger(__name__)
 
 try:
     import pyvista as pv
