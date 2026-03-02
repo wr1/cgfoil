@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import logging
+from pathlib import Path
 
 from cgfoil.core.run_cgfoil import run_cgfoil
 from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
@@ -122,7 +121,7 @@ def process_single_section(args):
         run_cgfoil(mesh)
         logger.info(f"Completed processing section {section_id}")
     except Exception as e:
-        logger.error(f"Error processing section {section_id}: {e}")
+        logger.exception(f"Error processing section {section_id}: {e}")
 
 
 def process_vtp_multi_section(

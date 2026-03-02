@@ -18,7 +18,6 @@ from cgfoil.core.trim import (
 from cgfoil.models import AirfoilMesh, MeshResult
 from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
-from cgfoil.utils.summary import compute_cross_sectional_areas
 
 from .mesh import create_line_mesh
 
@@ -287,7 +286,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         area2 = abs(
             p0.x() * (p1.y() - p2.y())
             + p1.x() * (p2.y() - p0.y())
-            + p2.x() * (p0.y() - p1.y())
+            + p2.x() * (p0.y() - p1.y()),
         )
         if area2 < EPS_AREA:
             removed += 1
@@ -304,7 +303,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     if removed:
         logger.warning(
             f"Removed {removed} degenerate (near-collinear) triangles "
-            f"(area < {EPS_AREA:.2e}) before export"
+            f"(area < {EPS_AREA:.2e}) before export",
         )
 
     # ------------------------------------------------------------------
