@@ -257,6 +257,58 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         outer_tangents,
     )
 
+    # ------------------------------------------------------------------
+    # Filter: material != -1 AND non-degenerate (the fix)
+    # ------------------------------------------------------------------
+    # Adaptive tolerance (safe for any scale_factor)
+    if vertices:
+        xs = [v[0] for v in vertices]
+        ys = [v[1] for v in vertices]
+        char_length = max(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
+        EPS_AREA = 1e-10 * char_length**2
+    else:
+        EPS_AREA = 1e-12
+
+    faces = []
+    filtered_face_normals = []
+    filtered_face_material_ids = []
+    filtered_face_inplanes = []
+    removed = 0
+
+    for idx, face in enumerate(cdt.finite_faces()):
+        material_id = face_material_ids[idx]
+        if material_id == -1:
+            continue
+
+        # Quick area check (twice-area formula, no division)
+        p0 = face.vertex(0).point()
+        p1 = face.vertex(1).point()
+        p2 = face.vertex(2).point()
+        area2 = abs(
+            p0.x() * (p1.y() - p2.y())
+            + p1.x() * (p2.y() - p0.y())
+            + p2.x() * (p0.y() - p1.y()),
+        )
+        if area2 < EPS_AREA:
+            removed += 1
+            continue
+
+        v0 = vertex_map[face.vertex(0)]
+        v1 = vertex_map[face.vertex(1)]
+        v2 = vertex_map[face.vertex(2)]
+        faces.append([3, v0, v1, v2])
+        filtered_face_normals.append(face_normals[idx])
+        filtered_face_material_ids.append(material_id)
+        filtered_face_inplanes.append(face_inplanes[idx])
+
+    if removed:
+        logger.warning(
+            f"Removed {removed} degenerate (near-collinear) triangles "
+            f"(area < {EPS_AREA:.2e}) before export",
+        )
+
+    # Areas are computed from the cleaned lists (original function still works)
+    areas = compute_cross_sectional_areas(cdt, face_material_ids)
     # Collect faces with material_id != -1 and filter the lists
     faces = []
     filtered_face_normals = []
