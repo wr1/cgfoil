@@ -101,8 +101,9 @@ def compute_face_normals(
             # Find closest outer point by 2D distance
             closest_i = min(
                 range(n),
-                key=lambda j: (outer_points[j].x() - cx) ** 2
-                + (outer_points[j].y() - cy) ** 2,
+                key=lambda j: (
+                    (outer_points[j].x() - cx) ** 2 + (outer_points[j].y() - cy) ** 2
+                ),
             )
             normal_x, normal_y = outer_normals[closest_i]
             inplane_x, inplane_y = outer_tangents[closest_i]

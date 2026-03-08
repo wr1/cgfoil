@@ -176,7 +176,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
             web_material_ids.append(ply.material)
-            ply_normals.append(normal_ref if normal_ref else [0, 0])
+            ply_normals.append(normal_ref or [0, 0])
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
