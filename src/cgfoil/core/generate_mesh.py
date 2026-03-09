@@ -310,7 +310,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         logger.warning(
             f"Removed {removed} degenerate (near-collinear) triangles "
             f"(area < {EPS_AREA:.2e}) before export. "
-            f"Original faces: {total_faces_before}, Filtered faces: {len(faces)}"
+            f"Original faces: {total_faces_before}, Filtered faces: {len(faces)}",
         )
 
     # ------------------------------------------------------------------
