@@ -33,5 +33,8 @@ def build_vtk_mesh(mesh_result, mesh=None):
     mesh_obj.cell_data["offset_normals"] = np.array(
         [[-n[0], -n[1], 0.0] for n in mesh_result.face_normals],
     )
+    # Add web orientations to field_data
+    mesh_obj.field_data["web_orientations"] = np.array(mesh_result.web_orientations)
+    mesh_obj.field_data["web_names"] = mesh_result.web_names
     # Compute cell sizes using pyvista
     return mesh_obj.compute_cell_sizes()

@@ -134,6 +134,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     untrimmed_lines = []
     web_names = list(web_definition.keys())
     web_ply_thicknesses = []
+    web_orientations = []
     for web_name, web in web_definition.items():
         if web.coord_input:
             untrimmed_base_line = load_airfoil(web.coord_input, web.n_elem)
@@ -176,7 +177,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
             web_material_ids.append(ply.material)
-            ply_normals.append(normal_ref or [0, 0])
+            ply_normals.append(normal_ref)
+            web_orientations.append(web.orientation)
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
@@ -367,4 +369,5 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         materials=materials,
         skin_ply_thicknesses=ply_thicknesses,
         web_ply_thicknesses=web_ply_thicknesses,
+        web_orientations=web_orientations,
     )

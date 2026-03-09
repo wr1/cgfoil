@@ -83,4 +83,6 @@ def build_anba_data(mesh_result, matdb=None):
         "plane_orientations": plane_orientations,
         "scaling_constraint": scaling_constraint,
         "singular": singular,
+        "web_orientations": mesh_result.web_orientations,
+        "web_names": mesh_result.web_names,
     }

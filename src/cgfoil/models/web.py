@@ -21,4 +21,5 @@ class Web(BaseModel):
     coord_input: str | list[tuple[float, float]] | np.ndarray | None = None
     plies: list[Ply]
     normal_ref: list[float] = [0, 0]
+    orientation: list[float] = [0, 1, 0]
     n_elem: int | None = None

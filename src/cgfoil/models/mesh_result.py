@@ -28,3 +28,4 @@ class MeshResult(BaseModel):
     materials: list[dict[str, Any]] | None = None
     skin_ply_thicknesses: list[list[float]]
     web_ply_thicknesses: list[list[float]]
+    web_orientations: list[list[float]]
