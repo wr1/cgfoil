@@ -270,13 +270,17 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     else:
         EPS_AREA = 1e-14
 
+    # Collect faces into a list to avoid iterator issues
+    all_faces = list(cdt.finite_faces())
+    total_faces_before = len(all_faces)
+
     faces = []
     filtered_face_normals = []
     filtered_face_material_ids = []
     filtered_face_inplanes = []
     removed = 0
 
-    for idx, face in enumerate(cdt.finite_faces()):
+    for idx, face in enumerate(all_faces):
         material_id = face_material_ids[idx]
         if material_id == -1:
             continue
@@ -305,7 +309,8 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     if removed:
         logger.warning(
             f"Removed {removed} degenerate (near-collinear) triangles "
-            f"(area < {EPS_AREA:.2e}) before export",
+            f"(area < {EPS_AREA:.2e}) before export. "
+            f"Original faces: {total_faces_before}, Filtered faces: {len(faces)}"
         )
 
     # ------------------------------------------------------------------
