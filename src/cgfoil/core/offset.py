@@ -1,6 +1,7 @@
 """Offset airfoil functionality."""
 
 import math
+
 from CGAL.CGAL_Kernel import Point_2
 
 

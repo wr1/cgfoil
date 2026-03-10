@@ -1,11 +1,13 @@
-"""Main execution logic for cgfoil."""
+"""Mesh generation logic."""
+
+from __future__ import annotations
 
 import math
+
 import numpy as np
-from typing import Optional
 from CGAL.CGAL_Kernel import Point_2
 from CGAL.CGAL_Mesh_2 import Mesh_2_Constrained_Delaunay_triangulation_2
-from cgfoil.core.mesh import create_line_mesh
+
 from cgfoil.core.normals import compute_face_normals
 from cgfoil.core.offset import offset_airfoil
 from cgfoil.core.trim import (
@@ -14,10 +16,10 @@ from cgfoil.core.trim import (
     trim_self_intersecting_curve,
 )
 from cgfoil.models import AirfoilMesh, MeshResult
-from cgfoil.utils.io import load_airfoil, save_mesh_to_vtk
+from cgfoil.utils.io import load_airfoil
 from cgfoil.utils.logger import logger
-from cgfoil.utils.plot import plot_triangulation
-from cgfoil.utils.summary import compute_cross_sectional_areas
+
+from .mesh import create_line_mesh
 
 
 def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
@@ -41,14 +43,14 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # If materials db is defined, check all used are present
     if materials:
         name_to_id = {mat["name"]: idx for idx, mat in enumerate(materials)}
-        missing = []
-        for name in used_names:
-            if name not in name_to_id:
-                missing.append(f"'{name}'")
+        missing = [f"'{name}'" for name in used_names if name not in name_to_id]
         if missing:
-            raise ValueError(
+            msg = (
                 "The following materials are not defined in the materials "
                 f"database: {', '.join(missing)}"
+            )
+            raise ValueError(
+                msg,
             )
     else:
         name_to_id = {}
@@ -132,6 +134,7 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     untrimmed_lines = []
     web_names = list(web_definition.keys())
     web_ply_thicknesses = []
+    web_orientations = []
     for web_name, web in web_definition.items():
         if web.coord_input:
             untrimmed_base_line = load_airfoil(web.coord_input, web.n_elem)
@@ -144,10 +147,12 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             else:
                 untrimmed_base_line = [Point_2(*p) for p in web.points]
         else:
-            raise ValueError(f"Web {web_name} must have either points or coord_input")
+            msg = f"Web {web_name} must have either points or coord_input"
+            raise ValueError(msg)
         untrimmed_lines.append(untrimmed_base_line)
         base_line = trim_line(
-            untrimmed_base_line, inner_list[-1] if inner_list else outer_points
+            untrimmed_base_line,
+            inner_list[-1] if inner_list else outer_points,
         )
         base_line = adjust_endpoints(base_line, protrusion_distance)
         current_line = base_line
@@ -160,16 +165,20 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
             thickness_list = ply.thickness.compute(coords_web)
             web_ply_thicknesses.append(thickness_list)
             untrimmed_offset_line = offset_airfoil(
-                current_untrimmed, thickness_list, normal_ref
+                current_untrimmed,
+                thickness_list,
+                normal_ref,
             )
             offset_line = trim_line(
-                untrimmed_offset_line, inner_list[-1] if inner_list else outer_points
+                untrimmed_offset_line,
+                inner_list[-1] if inner_list else outer_points,
             )
             offset_line = adjust_endpoints(offset_line, protrusion_distance)
             ply_points = current_line + offset_line[::-1]
             line_ply_list.append(ply_points)
             web_material_ids.append(ply.material)
-            ply_normals.append(normal_ref if normal_ref else [0, 0])
+            ply_normals.append(normal_ref)
+            web_orientations.append(web.orientation)
             current_line = offset_line
             current_untrimmed = untrimmed_offset_line
 
@@ -185,14 +194,16 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Insert outer boundary as constraints
     for i in range(len(outer_points)):
         cdt.insert_constraint(
-            outer_points[i], outer_points[(i + 1) % len(outer_points)]
+            outer_points[i],
+            outer_points[(i + 1) % len(outer_points)],
         )
 
     # Insert inner boundaries as constraints
     for inner_points in inner_list:
         for i in range(len(inner_points)):
             cdt.insert_constraint(
-                inner_points[i], inner_points[(i + 1) % len(inner_points)]
+                inner_points[i],
+                inner_points[(i + 1) % len(inner_points)],
             )
 
     # Insert line plies as constraints
@@ -222,11 +233,9 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
     # Collect vertices and faces
     vertices = []
     vertex_map = {}
-    idx = 0
-    for v in cdt.finite_vertices():
+    for idx, v in enumerate(cdt.finite_vertices()):
         vertex_map[v] = idx
         vertices.append([v.point().x(), v.point().y(), 0.0])
-        idx += 1
     faces = []
     for face in cdt.finite_faces():
         material_id = -1  # Will compute below
@@ -249,26 +258,98 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         outer_tangents,
     )
 
-    # Collect faces with material_id != -1 and filter the lists
+    # ------------------------------------------------------------------
+    # Filter: material != -1 AND non-degenerate (the fix)
+    # ------------------------------------------------------------------
+    # Adaptive tolerance (safe for any scale_factor)
+    if vertices:
+        xs = [v[0] for v in vertices]
+        ys = [v[1] for v in vertices]
+        char_length = max(max(xs) - min(xs), max(ys) - min(ys)) or 1.0
+        EPS_AREA = 1e-12 * char_length**2
+    else:
+        EPS_AREA = 1e-14
+
+    # Collect faces into a list to avoid iterator issues
+    all_faces = list(cdt.finite_faces())
+    total_faces_before = len(all_faces)
+
     faces = []
     filtered_face_normals = []
     filtered_face_material_ids = []
     filtered_face_inplanes = []
-    idx = 0
-    for face in cdt.finite_faces():
-        material_id = face_material_ids[idx]
-        if material_id != -1:
-            v0 = vertex_map[face.vertex(0)]
-            v1 = vertex_map[face.vertex(1)]
-            v2 = vertex_map[face.vertex(2)]
-            faces.append([3, v0, v1, v2])
-            filtered_face_normals.append(face_normals[idx])
-            filtered_face_material_ids.append(material_id)
-            filtered_face_inplanes.append(face_inplanes[idx])
-        idx += 1
+    removed = 0
 
-    # Compute cross-sectional areas
-    areas = compute_cross_sectional_areas(cdt, face_material_ids)
+    for idx, face in enumerate(all_faces):
+        material_id = face_material_ids[idx]
+        if material_id == -1:
+            continue
+
+        # Quick area check (twice-area formula, no division)
+        p0 = face.vertex(0).point()
+        p1 = face.vertex(1).point()
+        p2 = face.vertex(2).point()
+        area2 = abs(
+            p0.x() * (p1.y() - p2.y())
+            + p1.x() * (p2.y() - p0.y())
+            + p2.x() * (p0.y() - p1.y()),
+        )
+        if area2 < EPS_AREA:
+            removed += 1
+            continue
+
+        v0 = vertex_map[face.vertex(0)]
+        v1 = vertex_map[face.vertex(1)]
+        v2 = vertex_map[face.vertex(2)]
+        faces.append([3, v0, v1, v2])
+        filtered_face_normals.append(face_normals[idx])
+        filtered_face_material_ids.append(material_id)
+        filtered_face_inplanes.append(face_inplanes[idx])
+
+    if removed:
+        logger.warning(
+            f"Removed {removed} degenerate (near-collinear) triangles "
+            f"(area < {EPS_AREA:.2e}) before export. "
+            f"Original faces: {total_faces_before}, Filtered faces: {len(faces)}",
+        )
+
+    # ------------------------------------------------------------------
+    # Remove loose nodes (vertices not connected to any face)
+    # ------------------------------------------------------------------
+    used_vertices = set()
+    for face in faces:
+        _, v0, v1, v2 = face
+        used_vertices.add(v0)
+        used_vertices.add(v1)
+        used_vertices.add(v2)
+
+    new_vertices = []
+    old_to_new = {}
+    for i, v in enumerate(vertices):
+        if i in used_vertices:
+            old_to_new[i] = len(new_vertices)
+            new_vertices.append(v)
+    vertices = new_vertices
+
+    # Update face indices
+    for face in faces:
+        face[1] = old_to_new[face[1]]
+        face[2] = old_to_new[face[2]]
+        face[3] = old_to_new[face[3]]
+
+    # Compute cross-sectional areas from filtered faces
+    areas = {}
+    for i, face in enumerate(faces):
+        material_id = filtered_face_material_ids[i]
+        _, v0, v1, v2 = face
+        p0 = vertices[v0][:2]
+        p1 = vertices[v1][:2]
+        p2 = vertices[v2][:2]
+        x1, y1 = p0
+        x2, y2 = p1
+        x3, y3 = p2
+        area = 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2))
+        areas[material_id] = areas.get(material_id, 0) + area
 
     # Convert to serializable lists
     outer_points_list = [(p.x(), p.y()) for p in outer_points]
@@ -293,52 +374,5 @@ def generate_mesh(mesh: AirfoilMesh) -> MeshResult:
         materials=materials,
         skin_ply_thicknesses=ply_thicknesses,
         web_ply_thicknesses=web_ply_thicknesses,
+        web_orientations=web_orientations,
     )
-
-
-def plot_mesh(
-    mesh_result: MeshResult,
-    plot_filename: Optional[str] = None,
-    split_view: bool = False,
-):
-    # Convert back to Point_2 for plotting
-    from CGAL.CGAL_Kernel import Point_2
-
-    outer_points = [Point_2(*p) for p in mesh_result.outer_points]
-    inner_list = [[Point_2(*p) for p in inner] for inner in mesh_result.inner_list]
-    line_ply_list = [[Point_2(*p) for p in ply] for ply in mesh_result.line_ply_list]
-    untrimmed_lines = [
-        [Point_2(*p) for p in line] for line in mesh_result.untrimmed_lines
-    ]
-    plot_triangulation(
-        mesh_result.vertices,
-        mesh_result.faces,
-        outer_points,
-        inner_list,
-        line_ply_list,
-        untrimmed_lines,
-        mesh_result.web_material_ids,
-        mesh_result.skin_material_ids,
-        mesh_result.web_names,
-        mesh_result.face_normals,
-        mesh_result.face_material_ids,
-        mesh_result.face_inplanes,
-        split_view,
-        plot_filename,
-    )
-
-
-def run_cgfoil(mesh: AirfoilMesh):
-    mesh_result = generate_mesh(mesh)
-    logger.info(f"Cross-sectional areas: {mesh_result.areas}")
-
-    if mesh.vtk:
-        save_mesh_to_vtk(mesh_result, mesh, mesh.vtk)
-
-    if mesh.plot:
-        plot_mesh(mesh_result, mesh.plot_filename, mesh.split_view)
-
-    logger.info(f"Number of vertices: {len(mesh_result.vertices)}")
-    logger.info(f"Number of faces: {len(mesh_result.faces)}")
-    logger.info(f"Web Material ids: {mesh_result.web_material_ids}")
-    logger.info(f"Skin Material ids: {mesh_result.skin_material_ids}")

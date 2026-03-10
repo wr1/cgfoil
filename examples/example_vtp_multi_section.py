@@ -1,14 +1,20 @@
 """Demonstrates airfoil meshing from a VTP file with multi-section processing."""
 
-import os
-import multiprocessing
-from cgfoil.core.main import run_cgfoil
-from cgfoil.models import Skin, Web, Ply, AirfoilMesh, Thickness
+from __future__ import annotations
+
+import logging
+from pathlib import Path
+
+from cgfoil.core.run_cgfoil import run_cgfoil
+from cgfoil.models import AirfoilMesh, Ply, Skin, Thickness, Web
+
+logger = logging.getLogger(__name__)
 
 try:
     import pyvista as pv
 except ImportError:
-    raise ImportError("pyvista is required for this example")
+    msg = "pyvista is required for this example"
+    raise ImportError(msg)
 
 # Rotation angle around z-axis
 ROTATION_ANGLE = 90
@@ -17,18 +23,19 @@ ROTATION_ANGLE = 90
 def process_single_section(args):
     """Process a single section_id."""
     section_id, vtp_file, output_base_dir = args
+    logger.info(f"Processing section {section_id}")
     try:
-        print(f"Starting processing section_id: {section_id}")
-        # Load VTP file in each process to avoid serialization issues
+        # Load VTP file
         mesh_vtp = pv.read(vtp_file).rotate_z(ROTATION_ANGLE)
 
         # Create subdirectory
-        section_dir = os.path.join(output_base_dir, f"section_{section_id}")
-        os.makedirs(section_dir, exist_ok=True)
+        section_dir = Path(output_base_dir) / f"section_{section_id}"
+        section_dir.mkdir(parents=True, exist_ok=True)
 
         # Filter mesh for this section_id
         section_mesh = mesh_vtp.threshold(
-            value=(section_id, section_id), scalars="section_id"
+            value=(section_id, section_id),
+            scalars="section_id",
         )
 
         # Extract airfoil (assuming panel_id logic similar to original)
@@ -51,14 +58,14 @@ def process_single_section(args):
                     ]
                     * 0.01
                 )
-                + 0.04
+                + 0.04,
             )[:-1]
             + list(
                 te.cell_data_to_point_data().point_data[
                     "ply_000001_plate_100_thickness"
                 ]
                 * 1
-                + 0.04
+                + 0.04,
             )[1:]
         )
 
@@ -104,20 +111,22 @@ def process_single_section(args):
             webs=web_definition,
             airfoil_input=points_2d,
             n_elem=None,
-            plot=False,  # Disable plotting in parallel to avoid issues
-            plot_filename=None,
-            vtk=os.path.join(section_dir, "output.vtk"),
+            plot=True,
+            plot_filename=str(section_dir / "plot.png"),
+            vtk=str(section_dir / "output.vtk"),
+            split_view=True,
         )
 
         # Run the meshing
         run_cgfoil(mesh)
-        print(f"Completed processing section_id: {section_id}")
+        logger.info(f"Completed processing section {section_id}")
     except Exception as e:
-        print(f"Error processing section_id {section_id}: {e}")
+        logger.exception(f"Error processing section {section_id}: {e}")
 
 
 def process_vtp_multi_section(
-    vtp_file: str, output_base_dir: str, num_processes: int = None
+    vtp_file: str,
+    output_base_dir: str,
 ):
     """Process VTP file for all unique section_ids, outputting to subdirectories."""
     # Load VTP file to get unique ids
@@ -125,21 +134,17 @@ def process_vtp_multi_section(
 
     # Get unique section_ids
     if "section_id" not in mesh_vtp.cell_data:
-        raise ValueError("section_id not found in VTP file")
+        msg = "section_id not found in VTP file"
+        raise ValueError(msg)
     unique_section_ids = mesh_vtp.cell_data["section_id"]
     unique_ids = sorted(set(unique_section_ids))
-    total_sections = len(unique_ids)
-    print(f"Found {total_sections} unique section_ids: {unique_ids}")
 
-    # Prepare arguments for multiprocessing
+    # Prepare arguments for processing
     args_list = [(section_id, vtp_file, output_base_dir) for section_id in unique_ids]
 
-    # Use multiprocessing Pool
-    if num_processes is None:
-        num_processes = min(multiprocessing.cpu_count(), total_sections)
-    print(f"Using {num_processes} processes")
-    with multiprocessing.Pool(processes=num_processes) as pool:
-        pool.map(process_single_section, args_list)
+    # Process in series
+    for args in args_list:
+        process_single_section(args)
 
 
 # Example usage

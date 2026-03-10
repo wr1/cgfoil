@@ -25,7 +25,8 @@ def get_material_id(
         for i in range(len(inner_list) + 1):
             if i == 0:
                 if len(inner_list) == 0 or not point_in_polygon(
-                    centroid, inner_list[0]
+                    centroid,
+                    inner_list[0],
                 ):
                     if skin_material_ids and i < len(skin_material_ids):
                         material_id = skin_material_ids[i]
@@ -38,20 +39,20 @@ def get_material_id(
                     break
             elif i < len(inner_list):
                 if point_in_polygon(
-                    centroid, inner_list[i - 1]
+                    centroid,
+                    inner_list[i - 1],
                 ) and not point_in_polygon(centroid, inner_list[i]):
                     if skin_material_ids and i < len(skin_material_ids):
                         material_id = skin_material_ids[i]
                         is_skin = True
                         layer_index = i
                     break
-            else:
-                if point_in_polygon(centroid, inner_list[-1]):
-                    if skin_material_ids and i < len(skin_material_ids):
-                        material_id = skin_material_ids[i]
-                        is_skin = True
-                        layer_index = i
-                    break
+            elif point_in_polygon(centroid, inner_list[-1]):
+                if skin_material_ids and i < len(skin_material_ids):
+                    material_id = skin_material_ids[i]
+                    is_skin = True
+                    layer_index = i
+                break
     if material_id == -1:
         for idx_ply, ply in enumerate(line_ply_list):
             if point_in_polygon(centroid, ply):
@@ -100,8 +101,9 @@ def compute_face_normals(
             # Find closest outer point by 2D distance
             closest_i = min(
                 range(n),
-                key=lambda j: (outer_points[j].x() - cx) ** 2
-                + (outer_points[j].y() - cy) ** 2,
+                key=lambda j: (
+                    (outer_points[j].x() - cx) ** 2 + (outer_points[j].y() - cy) ** 2
+                ),
             )
             normal_x, normal_y = outer_normals[closest_i]
             inplane_x, inplane_y = outer_tangents[closest_i]
